@@ -25,9 +25,9 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 
-# work environment - don't entirely need it for now
-library(rstudioapi) 
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+# # work environment - don't entirely need it for now
+# library(rstudioapi) 
+# setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```
 
 # Retrieve Data from GBIF using their API
@@ -99,44 +99,40 @@ print(which(data$species=="")) # there shouldn't be any more empty species
 print(which(data$genus=="")) # there shouldn't be any more empty genus
 
 ```
-playground
+Dates
 ```{r}
-# add missing years
-# Ys <- format(data$dateIdentified,'%Y')
-# Ms <- format(data$dateIdentified,'%m')
-# Ds <- format(data$dateIdentified,'%s')
+print("before")
+print(sum(is.na(data$year)))
+print(sum(is.na(data$month)))
+print(sum(is.na(data$day)))
 
+# add missing year information from other columns 
 data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
   format(
     data$dateIdentified[which(
       is.na(data$year) & !is.na(data$dateIdentified))],
     '%Y'))
-# add days 
-data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
-  format(
-    data$dateIdentified[which(
-      is.na(data$day) & !is.na(data$dateIdentified))],
-    '%d'))
 
-# add months
-data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.numeric(
+# add missing day information from other columns
+# data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
+#   format(
+#     data$dateIdentified[which(
+#       is.na(data$day) & !is.na(data$dateIdentified))],
+#     '%d'))
+
+# add missing month information from other columns
+data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
   format(
     data$dateIdentified[which(
       is.na(data$month) & !is.na(data$dateIdentified))],
     '%m'))
 
 # remaining NAs
+print("after")
 print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
 print(sum(is.na(data$day)))
 ```
-
-Systemize Dates
-```{r}
-
-
-```
-
 Systemize Location Data
 ```{r}
 
@@ -144,7 +140,44 @@ Systemize Location Data
 ```
 # Basic Vis
 ```{r}
-# ggplot(data, aes(Sample,CPM)) +
-#   ggsum(data[data$species==""])
-#   ggtitle("Samples")
+
+ggplot(data,aes(year)) +
+  geom_density(color = "#00501B",
+               size = 0.25) +
+  geom_vline(xintercept = 2000,
+             size = 0.5,
+             color = "black") 
+  # + geom_rect(xmin = min(data$year),
+  #           xmax = 2000,
+  #           ymin = -Inf, 
+  #           ymax = Inf,
+  #           alpha = 0.5,
+  #           color = "#EC7063")
+
+
+```
+
+```{r}
+data <- data[which(data$year > 1999 ), ]
+
+ggplot(data,aes(year)) +
+  geom_bar(fill = "#0E6251",
+           fill = 0.75)
+
+data$month = as.factor(data$month)
+# levels(data$month) = c("Jan","Feb","Mar","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+ggplot(data,aes(month)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75)
+
+# spp = data$species
+spp_top <- data %>%
+  group_by(species) %>%
+  tally() %>%
+  top_n(10)
+
+ggplot(spp_top, aes(x = species, y=n, fill=species)) +
+  geom_bar(stat="identity") + 
+  # coord_polar("y", start=0) +
 ```
