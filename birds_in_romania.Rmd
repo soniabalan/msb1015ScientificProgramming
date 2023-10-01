@@ -178,6 +178,19 @@ spp_top <- data %>%
   top_n(10)
 
 ggplot(spp_top, aes(x = species, y=n, fill=species)) +
-  geom_bar(stat="identity") + 
-  # coord_polar("y", start=0) +
+  geom_bar(stat="identity") 
+
+top_spp_by_month <- function(m){
+  spp_month <- data$species(data[,"month"== m])
+  spp_top_month <- spp_month %>%
+    group_by(species) %>%
+    tally() %>%
+    top_n(10)
+
+  ggplot(spp_top, aes(x = species, y=n, fill=species)) +
+    geom_bar(stat="identity") 
+}
+
+tapply(data$species,data$month,top_spp_by_month(x))
+  
 ```
