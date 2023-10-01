@@ -1,0 +1,150 @@
+---
+title: "Birds in Romania"
+output: html_document
+date: "2023-09-14"
+
+Data Info:
+  Username: soniaa.balan
+  Format: SIMPLE_CSV
+  Download key: 0018307-230828120925497
+  Created: 2023-09-16T09:31:59.821+00:00
+  Citation Info:  
+    Please always cite the download DOI when using this data.
+    https://www.gbif.org/citation-guidelines
+    DOI: 10.15468/dl.y8qsxq
+    Citation:
+    GBIF Occurrence Download https://doi.org/10.15468/dl.y8qsxq Accessed from R via rgbif(https://github.com/ropensci/rgbif) on 2023-09-16
+
+---
+
+# Setup 
+```{r} 
+# Libraries
+library(rgbif)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# work environment - don't entirely need it for now
+library(rstudioapi) 
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+```
+
+# Retrieve Data from GBIF using their API
+```{r}
+# # download occurrence data
+# occ_download(
+#   # filters applied
+#   pred("taxonKey", 212), # aves - all bird species
+#   pred("country","RO"), # Romania
+#   format = "SIMPLE_CSV",
+#   # accreditation
+#   user = "soniaa.balan",
+#   pwd = "not_a_real_password", # for safety reasons, the password is not included in this script
+#   email = "soniaa.balan@gmail.com"
+# )
+
+# # check download status - also returns Download information
+# occ_download_wait('0018307-230828120925497')
+
+# retrieve downloaded data
+data <- occ_download_get('0018307-230828120925497') %>%
+  occ_download_import()
+
+# factorize data stored as characters
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
+
+# remove irrelevant and uninformative (no available data) columns
+remove_vars = c("datasetKey","occurrenceID","kingdom","phylum","class","verbatimScientificNameAuthorship","countryCode","publishingOrgKey","coordinatePrecision","elevation","elevationAccuracy","depth","depthAccuracy","taxonKey","speciesKey","catalogNumber","recordNumber","license","rightsHolder","establishmentMeans","lastInterpreted","recordedBy","typeStatus","mediaType","issue")
+
+data = data %>% select(-remove_vars)
+```
+
+
+# Data Cleaning ----------------------------------------------------------------
+
+```{r}
+# remove samples with no informative taxonomic data
+data <- data[-which(data$order == ""), ]
+
+# summaries of remaining columns - for debugging
+for (var in colnames(data)) {
+  print(summary(data[,var]))
+}
+```
+
+Systemize Taxonomy Labels
+```{r}
+
+##### Renaming verbatim scientific name levels #####
+lvl_verbatim = levels(data$verbatimScientificName)
+verbatim_sp <- lapply(lvl_verbatim, function(x) word(x, 1, 2))
+levels(data$verbatimScientificName) = unlist(verbatim_sp)
+
+# add species information from verbatimScientificName 
+data$species <- as.character(data$species)
+data[which(data$species==""),"species"] <-   as.vector(data[(data$species==""),"verbatimScientificName"])
+data$species <- as.factor(data$species)
+
+# add genus information from species
+gen <- lapply(data[data$genus=="" & !is.na(data$species),"species"], function(x) word(x, 1))
+
+data$genus <- as.character(data$genus)
+data[which(data$genus=="" & !is.na(data$species)),"genus"] <- as.vector(gen)
+data[data$genus=="","genus"] <- NA
+data$genus <- as.factor(data$genus)
+
+# sanity checks
+print(which(data$species=="")) # there shouldn't be any more empty species
+print(which(data$genus=="")) # there shouldn't be any more empty genus
+
+```
+playground
+```{r}
+# add missing years
+# Ys <- format(data$dateIdentified,'%Y')
+# Ms <- format(data$dateIdentified,'%m')
+# Ds <- format(data$dateIdentified,'%s')
+
+data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
+  format(
+    data$dateIdentified[which(
+      is.na(data$year) & !is.na(data$dateIdentified))],
+    '%Y'))
+# add days 
+data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
+  format(
+    data$dateIdentified[which(
+      is.na(data$day) & !is.na(data$dateIdentified))],
+    '%d'))
+
+# add months
+data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.numeric(
+  format(
+    data$dateIdentified[which(
+      is.na(data$month) & !is.na(data$dateIdentified))],
+    '%m'))
+
+# remaining NAs
+print(sum(is.na(data$year)))
+print(sum(is.na(data$month)))
+print(sum(is.na(data$day)))
+```
+
+Systemize Dates
+```{r}
+
+
+```
+
+Systemize Location Data
+```{r}
+
+
+```
+# Basic Vis
+```{r}
+# ggplot(data, aes(Sample,CPM)) +
+#   ggsum(data[data$species==""])
+#   ggtitle("Samples")
+```
