@@ -26,8 +26,8 @@ library(ggplot2)
 library(stringr)
 
 # # work environment - don't entirely need it for now
-# library(rstudioapi) 
-# setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+library(rstudioapi)
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```
 
 # Retrieve Data from GBIF using their API
@@ -55,7 +55,31 @@ data <- occ_download_get('0018307-230828120925497') %>%
 data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
 
 # remove irrelevant and uninformative (no available data) columns
-remove_vars = c("datasetKey","occurrenceID","kingdom","phylum","class","verbatimScientificNameAuthorship","countryCode","publishingOrgKey","coordinatePrecision","elevation","elevationAccuracy","depth","depthAccuracy","taxonKey","speciesKey","catalogNumber","recordNumber","license","rightsHolder","establishmentMeans","lastInterpreted","recordedBy","typeStatus","mediaType","issue")
+remove_vars = c("datasetKey",
+                "occurrenceID",
+                "kingdom",
+                "phylum",
+                "class",
+                "verbatimScientificNameAuthorship",
+                "countryCode",
+                "publishingOrgKey",
+                "coordinatePrecision",
+                "elevation",
+                "elevationAccuracy",
+                "depth",
+                "depthAccuracy",
+                "taxonKey",
+                "speciesKey",
+                "catalogNumber",
+                "recordNumber",
+                "license",
+                "rightsHolder",
+                "establishmentMeans",
+                "lastInterpreted",
+                "recordedBy",
+                "typeStatus",
+                "mediaType",
+                "issue")
 
 data = data %>% select(-remove_vars)
 ```
@@ -121,7 +145,7 @@ data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
 #     '%d'))
 
 # add missing month information from other columns
-data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
+data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.numeric(
   format(
     data$dateIdentified[which(
       is.na(data$month) & !is.na(data$dateIdentified))],
@@ -135,16 +159,14 @@ print(sum(is.na(data$day)))
 ```
 Systemize Location Data
 ```{r}
-
-
 ```
-# Basic Vis
+# Data Visualization
 ```{r}
 
 ggplot(data,aes(year)) +
   geom_density(color = "#00501B",
                size = 0.25) +
-  geom_vline(xintercept = 2000,
+  geom_vline(xintercept = 2015,
              size = 0.5,
              color = "black") 
   # + geom_rect(xmin = min(data$year),
@@ -158,39 +180,75 @@ ggplot(data,aes(year)) +
 ```
 
 ```{r}
-data <- data[which(data$year > 1999 ), ]
+# ---------------
+data <- data[which(data$year > 2014 ), ]
 
+# nr of occurences/year-----
 ggplot(data,aes(year)) +
   geom_bar(fill = "#0E6251",
-           fill = 0.75)
+           fill = 0.75)+
+  labs(title = paste("Occurences per Year"),
+     x = "Month",
+     y = "Count")
 
-data$month = as.factor(data$month)
-# levels(data$month) = c("Jan","Feb","Mar","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
-
+# nr of occurences/month -----
 ggplot(data,aes(month)) +
   geom_bar(fill = "#1B4F72", 
-           alpha = 0.75)
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Month"),
+     x = "Month",
+     y = "Count")
 
-# spp = data$species
+# top species ------
 spp_top <- data %>%
   group_by(species) %>%
-  tally() %>%
-  top_n(10)
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(10,n)
 
 ggplot(spp_top, aes(x = species, y=n, fill=species)) +
-  geom_bar(stat="identity") 
+  geom_bar(stat="identity") +
+  labs(title = paste("Top Species"),
+     x = "Species",
+     y = "Abundance")
 
+
+# top species by month -----
 top_spp_by_month <- function(m){
-  spp_month <- data$species(data[,"month"== m])
-  spp_top_month <- spp_month %>%
-    group_by(species) %>%
-    tally() %>%
-    top_n(10)
-
-  ggplot(spp_top, aes(x = species, y=n, fill=species)) +
-    geom_bar(stat="identity") 
+  spp_top_month <- data[data$month == m,] %>%
+  group_by(species) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(10,n)
+  
+  return(spp_top_month)
 }
 
-tapply(data$species,data$month,top_spp_by_month(x))
+# separate plots per month -----
+for (level in levels(data$month)) {
+  top_spp_month <- top_spp_by_month(level)
+  
+  p <- ggplot(top_spp_month, aes(x = species, y=n, fill=species)) +
+    geom_bar(stat="identity") + 
+    labs(title = paste("Top Species for Month", level),
+         x = "Species",
+         y = "Abundance")
+  
+  # save plot
+  plot_filename <- paste( "top_species_month_", level, ".png", sep = "")
+  ggsave(filename = plot_filename, plot = p, width = 8, height = 4)
+  
+}
+
+# plot all months ----
+ggplot(data, aes(x = month , y = order, fill=order)) +
+  geom_line()+
+  geom_point()
+
+  
+# for (level in levels(data$month)) {
+# }
+
+
   
 ```
