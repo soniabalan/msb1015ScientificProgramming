@@ -20,7 +20,11 @@ Data Info:
 # Setup 
 ```{r} 
 # Libraries install
-install.packages(c("rgbif","dplyr","ggplot2","stringr","rstudioapi"))
+# install.packages("rgbif")
+# install.packages("dplyr")
+# install.packages("ggplot2")
+# install.packages("stringr")
+# install.packages("rstudioapi")
 
 # Libraries loading
 library(rgbif)
