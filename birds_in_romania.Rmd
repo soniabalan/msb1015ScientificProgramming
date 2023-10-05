@@ -31,9 +31,9 @@ library(rgbif)
 library(dplyr)
 library(ggplot2)
 library(stringr)
-
-# # work environment - don't entirely need it for now
 library(rstudioapi)
+
+# set wrok environment
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```
 
@@ -68,7 +68,6 @@ remove_vars = c("datasetKey",
                 "countryCode",
                 "publishingOrgKey",
                 "coordinatePrecision",
-                "day",
                 "elevation",
                 "elevationAccuracy",
                 "depth",
@@ -90,21 +89,20 @@ remove_vars = c("datasetKey",
                 "publishingOrgKey",
                 "datasetKey",
                 "occurrenceID",
-                "taxonRank",
-                "eventDate")
+                "taxonRank")
 
 data = data_raw %>% select(-remove_vars)
 ```
 
 
 # Data Cleaning ----------------------------------------------------------------
-
+  General Cleaning
 ```{r}
 # remove samples with no informative taxonomic data
 data <- data[-which(data$order == ""), ]
 
 # factorize data stored as characters
-data[sapply(data, is.character)] <- lapply(data_raw[sapply(data, is.character)],as.factor)
+data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
 data$month <- as.factor(data$month)
 
 # replace NAs in count data by 1
@@ -116,8 +114,7 @@ for (var in colnames(data)) {
   print(summary(data[,var]))
 }
 ```
-
-Systemize Taxonomy Labels
+  Taxonomy Labels
 ```{r}
 
 ##### Renaming verbatim scientific name levels #####
@@ -142,15 +139,14 @@ data$genus <- as.factor(data$genus)
 print(which(data$species=="")) # there shouldn't be any more empty species
 print(which(data$genus=="")) # there shouldn't be any more empty genus
 
-
 data = data %>% select(-c("verbatimScientificName"))
-
 ```
-Dates
+  Dates
 ```{r}
 print("before")
 print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
+print(sum(is.na(data$day)))
 
 # add missing year information from other columns 
 data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
@@ -159,6 +155,13 @@ data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
       is.na(data$year) & !is.na(data$dateIdentified))],
     '%Y'))
 
+# add missing day information from other columns
+data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
+  format(
+    data$dateIdentified[which(
+      is.na(data$day) & !is.na(data$dateIdentified))],
+    '%d'))
+
 # add missing month information from other columns
 data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
   format(
@@ -166,36 +169,30 @@ data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
       is.na(data$month) & !is.na(data$dateIdentified))],
     '%m'))
 
+data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
+
 # remaining NAs
 print("after")
 print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
+print(sum(is.na(data$day)))
 # note - forgot to run from begining and after adding the data from dateIdentified, eventDate doesn't add anyting new.
 
-data = data %>% select(-c("dateIdentified"))
+# data = data %>% select(-c("dateIdentified"))
 ```
-Systemize Location Data
+  Location Data
 ```{r}
-
 ```
-# Diagnostics
+# Diagnostics Plots -------------------------------
+  Cutoff Decision
 ```{r}
-
 ggplot(data,aes(year)) +
   geom_bar(color = "#00501B") +
   geom_vline(xintercept = 2005,
              linewidth = 0.5,
              color = "black") 
-  # + geom_rect(xmin = min(data$year),
-  #           xmax = 2000,
-  #           ymin = -Inf, 
-  #           ymax = Inf,
-  #           alpha = 0.5,
-  #           color = "#EC7063")
-
-
 ```
-# More exploratory figures
+  More exploratory figures
 ```{r}
 # ---------------
 data_vis <- data[which(data$year > 2004 ), ]
@@ -216,6 +213,17 @@ ggplot(data_vis, aes(month)) +
      x = "Month",
      y = "Count")
 
+# nr of occurences/day
+ggplot(data_vis, aes(day)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Day"),
+     x = "Month",
+     y = "Count")
+```
+
+# Changes over time
+```{r}
 # top species ------
 spp_top <- data_vis %>%
   group_by(species) %>%
@@ -223,41 +231,12 @@ spp_top <- data_vis %>%
   arrange(desc(n)) %>%
   top_n(10,n)
 
-ggplot(spp_top, aes(x = species, y = n, fill = species)) +
+ggplot(spp_top, aes(x = reorder(species, n), y = n, fill = species)) +
   geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
   labs(title = paste("Top Species"),
      x = "Species",
      y = "Abundance")
-
-
-# top species by month ----- 
-
-### Doesn't work with month as factor
-# top_spp_month <- function(m){
-#   spp_top_month <- data_vis[data_vis$month == m,] %>%
-#   group_by(species) %>%
-#   summarize(n = n()) %>%
-#   arrange(desc(n)) %>%
-#   top_n(10,n)
-#   
-#   return(spp_top_month)
-# }
-# 
-# # separate plots per month -----
-# for (level in levels(data$month)) {
-#   top_spp_month <- top_spp_by_month(level)
-  
-  # p <- ggplot(top_spp_month, aes(x = species, y = n)) +
-  #   geom_bar(stat="identity") + 
-  #   labs(title = paste("Top Species for Month", level),
-  #        x = "Species",
-  #        y = "Abundance")
-  # 
-  # # save plot
-  # plot_filename <- paste( "top_species_month_", level, ".png", sep = "")
-  # ggsave(filename = plot_filename, plot = p, width = 8, height = 4)
-  # 
-}
 
 # plot all months ----
 ggplot(data_vis, aes(month , y = order)) +
@@ -267,8 +246,6 @@ ggplot(data_vis, aes(month , y = order)) +
   labs(title = "Presence/month by Order",
        x = "Month")
 #  + color seasons in the background
-```
-```{r}
 
 process_month <- function(month_data) {
   spp_top_month <- month_data %>%
@@ -286,7 +263,7 @@ process_month <- function(month_data) {
 # Split the data frame by the "month" column
 data_split <- split(data, data$month)
 result_list <- lapply(data_split, process_month)
-result_df <- do.call
+result_df <- do.call(rbind, result_list)
 # recreate a month column
 result_df$month <- sapply(strsplit(rownames(result_df), "\\."), function(x) as.numeric(x[1]))
 
