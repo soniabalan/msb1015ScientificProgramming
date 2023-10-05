@@ -246,13 +246,10 @@ ggplot(data_vis, aes(day)) +
 # Changes over time
 ```{r}
 # top species ------
-spp_top <- data_vis %>%
-  group_by(species) %>%
-  summarize(n = n()) %>%
-  arrange(desc(n)) %>%
-  top_n(10,n)
+spp_total <- process_counts(data_vis, "species")
+spp_top_10 <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 10)
 
-ggplot(spp_top, aes(x = reorder(species, n), y = n, fill = species)) +
+ggplot(spp_top_10, aes(x = reorder(species, n), y = n, fill = species)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   labs(title = paste("Top Species"),
@@ -268,27 +265,11 @@ ggplot(data_vis, aes(month , y = order)) +
        x = "Month")
 #  + color seasons in the background
 
-process_month <- function(month_data) {
-  spp_top_month <- month_data %>%
-    group_by(species) %>%
-    summarize(n = n()) %>%
-    arrange(desc(n)) %>%
-    top_n(10, n)
-  
-  # Create a factor variable for 'species' to specify the order
-  spp_top_month$species <- factor(spp_top_month$species, levels = unique(month_data$species))
-  
-  return(spp_top_month)
-}
 
-# Split the data frame by the "month" column
-data_split <- split(data, data$month)
-result_list <- lapply(data_split, process_month)
-result_df <- do.call(rbind, result_list)
-# recreate a month column
-result_df$month <- sapply(strsplit(rownames(result_df), "\\."), function(x) as.numeric(x[1]))
+spp_per_month <- process_counts_per_feature(data_vis, "month", "species")
+spp_per_month_norm 
 
-ggplot(result_df, aes(month , y = n, color = species)) +
+ggplot(spp_per_month, aes(month , y = total_count, color = species)) +
   geom_line() +
   # geom_point() +
   # theme(legend.position="none") +
