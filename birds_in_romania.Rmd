@@ -55,11 +55,11 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 # occ_download_wait('0018307-230828120925497')
 
 # retrieve downloaded data
-data <- occ_download_get('0018307-230828120925497') %>%
+data_raw<- occ_download_get('0018307-230828120925497') %>%
   occ_download_import()
 
 # factorize data stored as characters
-data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
+data_raw[sapply(data_raw, is.character)] <- lapply(data_raw[sapply(data_raw, is.character)],as.factor)
 
 # remove irrelevant and uninformative (no available data) columns
 remove_vars = c("datasetKey",
@@ -71,6 +71,7 @@ remove_vars = c("datasetKey",
                 "countryCode",
                 "publishingOrgKey",
                 "coordinatePrecision",
+                "day",
                 "elevation",
                 "elevationAccuracy",
                 "depth",
@@ -86,9 +87,14 @@ remove_vars = c("datasetKey",
                 "recordedBy",
                 "typeStatus",
                 "mediaType",
-                "issue")
+                "issue",
+                "institutionCode",
+                "identifiedBy",
+                "publishingOrgKey",
+                "datasetKey",
+                "occurrenceID")
 
-data = data %>% select(-remove_vars)
+data = data_raw %>% select(-remove_vars)
 ```
 
 
@@ -129,13 +135,15 @@ data$genus <- as.factor(data$genus)
 print(which(data$species=="")) # there shouldn't be any more empty species
 print(which(data$genus=="")) # there shouldn't be any more empty genus
 
+
+data = data %>% select(-c("verbatimScientificName"))
+
 ```
 Dates
 ```{r}
 print("before")
 print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
-print(sum(is.na(data$day)))
 
 # add missing year information from other columns 
 data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
@@ -144,37 +152,42 @@ data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
       is.na(data$year) & !is.na(data$dateIdentified))],
     '%Y'))
 
-# add missing day information from other columns
-# data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
-#   format(
-#     data$dateIdentified[which(
-#       is.na(data$day) & !is.na(data$dateIdentified))],
-#     '%d'))
+data$year[which(is.na(data$year) & !is.na(data$eventDate))] <- as.numeric(
+  format(
+    data$eventDate[which(
+      is.na(data$year) & !is.na(data$eventDate))],
+    '%Y'))
 
 # add missing month information from other columns
-data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.numeric(
+data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
   format(
     data$dateIdentified[which(
       is.na(data$month) & !is.na(data$dateIdentified))],
+    '%m'))
+
+data$month[which(is.na(data$month) & !is.na(data$eventDate))] <- as.factor(
+  format(
+    data$eventDate[which(
+      is.na(data$month) & !is.na(data$eventDate))],
     '%m'))
 
 # remaining NAs
 print("after")
 print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
-print(sum(is.na(data$day)))
+# note - forgot to run from begining and after adding the data from dateIdentified, eventDate doesn't add anyting new.
 ```
 Systemize Location Data
 ```{r}
 ```
-# Data Visualization
+# Diagnostics
 ```{r}
 
 ggplot(data,aes(year)) +
   geom_density(color = "#00501B",
-               size = 0.25) +
+               linewidth = 0.25) +
   geom_vline(xintercept = 2015,
-             size = 0.5,
+             linewidth = 0.5,
              color = "black") 
   # + geom_rect(xmin = min(data$year),
   #           xmax = 2000,
@@ -185,13 +198,13 @@ ggplot(data,aes(year)) +
 
 
 ```
-
+# More exploratory figures
 ```{r}
 # ---------------
-data <- data[which(data$year > 2014 ), ]
+data_vis <- data[which(data$year > 2014 ), ]
 
 # nr of occurences/year-----
-ggplot(data,aes(year)) +
+ggplot(data_vis, aes(year)) +
   geom_bar(fill = "#0E6251",
            fill = 0.75)+
   labs(title = paste("Occurences per Year"),
@@ -199,7 +212,7 @@ ggplot(data,aes(year)) +
      y = "Count")
 
 # nr of occurences/month -----
-ggplot(data,aes(month)) +
+ggplot(data_vis, aes(month)) +
   geom_bar(fill = "#1B4F72", 
            alpha = 0.75) +
   labs(title = paste("Occurences per Month"),
@@ -207,14 +220,14 @@ ggplot(data,aes(month)) +
      y = "Count")
 
 # top species ------
-spp_top <- data %>%
+spp_top <- data_vis %>%
   group_by(species) %>%
   summarize(n = n()) %>%
   arrange(desc(n)) %>%
   top_n(10,n)
 
-ggplot(spp_top, aes(x = species, y=n, fill=species)) +
-  geom_bar(stat="identity") +
+ggplot(spp_top, aes(x = species, y = n, fill = species)) +
+  geom_bar(stat = "identity") +
   labs(title = paste("Top Species"),
      x = "Species",
      y = "Abundance")
@@ -222,7 +235,7 @@ ggplot(spp_top, aes(x = species, y=n, fill=species)) +
 
 # top species by month -----
 top_spp_by_month <- function(m){
-  spp_top_month <- data[data$month == m,] %>%
+  spp_top_month <- data_vis[data_vis$month == m,] %>%
   group_by(species) %>%
   summarize(n = n()) %>%
   arrange(desc(n)) %>%
@@ -235,7 +248,7 @@ top_spp_by_month <- function(m){
 for (level in levels(data$month)) {
   top_spp_month <- top_spp_by_month(level)
   
-  p <- ggplot(top_spp_month, aes(x = species, y=n, fill=species)) +
+  p <- ggplot(top_spp_month, aes(x = species, y = n, fill = species)) +
     geom_bar(stat="identity") + 
     labs(title = paste("Top Species for Month", level),
          x = "Species",
@@ -248,9 +261,12 @@ for (level in levels(data$month)) {
 }
 
 # plot all months ----
-ggplot(data, aes(x = month , y = order, fill=order)) +
-  geom_line()+
-  geom_point()
+ggplot(data_vis, aes(x = month , y = family, color = order)) +
+  geom_line() +
+  geom_point() +
+  theme(legend.position="none") +
+  labs(title = "Presence/month by Family",
+       x = "Month")
 
   
 # for (level in levels(data$month)) {
