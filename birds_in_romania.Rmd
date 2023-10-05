@@ -100,6 +100,7 @@ data = data_raw %>% select(-remove_vars)
 ```{r}
 # remove samples with no informative taxonomic data
 data <- data[-which(data$order == ""), ]
+data <- data[!is.na(data$order), ]
 
 # factorize data stored as characters
 data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
@@ -218,7 +219,13 @@ ggplot(data,aes(year)) +
 # ---------------
 data_vis <- data[which(data$year > 2004 ), ]
 
-# nr of occurences/year-----
+entry_per_date <- process_counts_per_feature(data_vis,"eventDate","gbifID")
+entry_per_date <- process_counts_per_feature(data_vis,"year","gbifID")
+entry_per_date <- process_counts_per_feature(data_vis,"month","gbifID")
+entry_per_date <- process_counts_per_feature(data_vis,"day","gbifID")
+
+# Occurences per time unit ------
+# nr of occurences/year
 ggplot(data_vis, aes(year)) +
   geom_bar(fill = "#0E6251",
            fill = 0.75)+
@@ -226,7 +233,7 @@ ggplot(data_vis, aes(year)) +
      x = "Month",
      y = "Count")
 
-# nr of occurences/month -----
+# nr of occurences/month 
 ggplot(data_vis, aes(month)) +
   geom_bar(fill = "#1B4F72", 
            alpha = 0.75) +
@@ -241,15 +248,28 @@ ggplot(data_vis, aes(day)) +
   labs(title = paste("Occurences per Day"),
      x = "Month",
      y = "Count")
+
+# occurences per location ------
+
+
 ```
 
 # Changes over time
 ```{r}
 # top species ------
 spp_total <- process_counts(data_vis, "species")
-spp_top_10 <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 10)
+spp_top <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 11)
+spp_top_sans1 <- spp_top[-1,]
 
-ggplot(spp_top_10, aes(x = reorder(species, n), y = n, fill = species)) +
+# most abundent birds (overall)
+ggplot(spp_top, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Species"),
+     x = "Species",
+     y = "Abundance")
+# most abundent birds (overall), without Anser albiformis (outlier?)
+ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   labs(title = paste("Top Species"),
@@ -257,7 +277,8 @@ ggplot(spp_top_10, aes(x = reorder(species, n), y = n, fill = species)) +
      y = "Abundance")
 
 # plot all months ----
-ggplot(data_vis, aes(month , y = order)) +
+ord_per_month <- process_counts_per_feature(data_vis,"month","order")
+ggplot(ord_per_month, aes(month , y = order)) +
   geom_line() +
   geom_point() +
   theme(legend.position="none") +
@@ -265,9 +286,9 @@ ggplot(data_vis, aes(month , y = order)) +
        x = "Month")
 #  + color seasons in the background
 
-
+# species per month
 spp_per_month <- process_counts_per_feature(data_vis, "month", "species")
-spp_per_month_norm 
+# spp_per_month_norm # ???
 
 ggplot(spp_per_month, aes(month , y = total_count, color = species)) +
   geom_line() +
