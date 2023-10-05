@@ -276,6 +276,25 @@ ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fi
      x = "Species",
      y = "Abundance")
 
+# top genus --------
+gen_total <- process_counts(data_vis, "genus")
+gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 11)
+# most abundent birds (overall)
+ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Genuses"),
+     x = "Genus",
+     y = "Abundance")
+# # most abundent birds (overall) without waxwings
+# gen_top_sans1 <- gen_top[-1,]
+# ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+#   geom_bar(stat = "identity") +
+#   coord_polar("y", start=0) +
+#   labs(title = paste("Top Genuses"),
+#      x = "Genus",
+#      y = "Abundance")
+
 # plot all months ----
 ord_per_month <- process_counts_per_feature(data_vis,"month","order")
 ggplot(ord_per_month, aes(month , y = order)) +
@@ -287,10 +306,10 @@ ggplot(ord_per_month, aes(month , y = order)) +
 #  + color seasons in the background
 
 # species per month
-spp_per_month <- process_counts_per_feature(data_vis, "month", "species")
+fan_per_month <- process_counts_per_feature(data_vis, "month", "order")
 # spp_per_month_norm # ???
 
-ggplot(spp_per_month, aes(month , y = total_count, color = species)) +
+ggplot(fan_per_month, aes(month , y = total_count, color = order)) +
   geom_line() +
   # geom_point() +
   # theme(legend.position="none") +
