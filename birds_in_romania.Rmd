@@ -183,6 +183,27 @@ print(sum(is.na(data$day)))
   Location Data
 ```{r}
 ```
+  Accounting for Count Data
+```{r}
+# function to obtain the accurate number of counts per feature
+process_counts_per_feature <- function(df, feature, taxon_level) {
+  counts <- df %>%
+  group_by(.data[[feature]], .data[[taxon_level]]) %>%
+  summarise(total_count = sum(individualCount))
+  
+  return(counts)
+}
+
+# getting he total number of occuernces per taxon level (to be used for normalization)
+process_counts <- function(df, taxon_level){
+  counts <- df %>%
+  group_by(.data[[taxon_level]]) %>%
+  summarise(total_count = sum(individualCount))
+  
+  return(counts)
+}
+ 
+```
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
