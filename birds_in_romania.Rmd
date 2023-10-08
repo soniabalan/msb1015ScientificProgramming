@@ -89,7 +89,8 @@ remove_vars = c("datasetKey",
                 "publishingOrgKey",
                 "datasetKey",
                 "occurrenceID",
-                "taxonRank")
+                "taxonRank",
+                "scientificName")
 
 data = data_raw %>% select(-remove_vars)
 ```
@@ -219,11 +220,6 @@ ggplot(data,aes(year)) +
 # ---------------
 data_vis <- data[which(data$year > 2004 ), ]
 
-entry_per_date <- process_counts_per_feature(data_vis,"eventDate","gbifID")
-entry_per_date <- process_counts_per_feature(data_vis,"year","gbifID")
-entry_per_date <- process_counts_per_feature(data_vis,"month","gbifID")
-entry_per_date <- process_counts_per_feature(data_vis,"day","gbifID")
-
 # Occurences per time unit ------
 # nr of occurences/year
 ggplot(data_vis, aes(year)) +
@@ -234,7 +230,7 @@ ggplot(data_vis, aes(year)) +
      y = "Count")
 
 # nr of occurences/month 
-ggplot(data_vis, aes(month)) +
+ggplot(data_vis, aes(month, fill = month)) +
   geom_bar(fill = "#1B4F72", 
            alpha = 0.75) +
   labs(title = paste("Occurences per Month"),
@@ -250,6 +246,62 @@ ggplot(data_vis, aes(day)) +
      y = "Count")
 
 # occurences per location ------
+# Locality\
+loc <- data_vis %>%
+  group_by(locality) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(11,n)
+loc <- loc[-which(loc$locality == ""), ]
+
+ggplot(loc, aes(x = reorder(locality, n), y = n, fill = locality)) +
+  geom_bar(stat = "identity",
+           fill = "#1B4F72", 
+           alpha = 0.75) +
+    coord_polar("y", start=0) +
+  labs(title = paste("Occurences per Locality"),
+     x = "Locality",
+     y = "Count")
+
+# province
+prov <- data_vis %>%
+  group_by(stateProvince) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(11,n)
+prov <- prov[-which(prov$stateProvince == ""), ]
+  
+ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = stateProvence)) +
+  geom_bar(stat = "identity",
+           fill = "#1B4F72", 
+           alpha = 0.75) +
+  coord_polar("y", start=0) +
+  labs(title = paste("Occurences per County"),
+     x = "County",
+     y = "Count")
+
+# latitude and longitude
+ggplot(data_vis, aes(decimalLatitude)) +
+  geom_histogram(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Latitude"),
+     x = "Latitude",
+     y = "Count")
+ggplot(data_vis, aes(decimalLongitude)) +
+  geom_histogram(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Longitude"),
+     x = "Longitude",
+     y = "Count")
+
+# OBSERVATION BASIS ----------------
+ggplot(data_vis, aes(collectionCode)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Organization"),
+     x = "Type",
+     y = "Count")
+
 
 
 ```
@@ -278,7 +330,7 @@ ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fi
 
 # top genus --------
 gen_total <- process_counts(data_vis, "genus")
-gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 11)
+gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
 # most abundent birds (overall)
 ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
   geom_bar(stat = "identity") +
@@ -286,14 +338,14 @@ ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = gen
   labs(title = paste("Top Genuses"),
      x = "Genus",
      y = "Abundance")
-# # most abundent birds (overall) without waxwings
-# gen_top_sans1 <- gen_top[-1,]
-# ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
-#   geom_bar(stat = "identity") +
-#   coord_polar("y", start=0) +
-#   labs(title = paste("Top Genuses"),
-#      x = "Genus",
-#      y = "Abundance")
+# most abundent birds (overall) without waxwings
+gen_top_sans1 <- gen_top[-2,]
+ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Genuses"),
+     x = "Genus",
+     y = "Abundance")
 
 # plot all months ----
 ord_per_month <- process_counts_per_feature(data_vis,"month","order")
