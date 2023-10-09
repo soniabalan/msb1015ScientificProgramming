@@ -20,11 +20,12 @@ Data Info:
 # Setup 
 ```{r} 
 # Libraries install
+# install.packages("rstudioapi")
 # install.packages("rgbif")
 # install.packages("dplyr")
 # install.packages("ggplot2")
 # install.packages("stringr")
-# install.packages("rstudioapi")
+# install.packages("stringdist")
 
 # Libraries loading
 library(rgbif)
@@ -32,6 +33,7 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(rstudioapi)
+library(stringdist)
 
 # set wrok environment
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
@@ -189,6 +191,25 @@ cities_list <- read.csv("orase.csv")
 cities_list = cities_list %>% select(-c("JUDET.AUTO",
                                         "POPULATIE..in.2002.",
                                         "REGIUNE"))
+# rename columns
+colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
+
+test = data[,c("locality", "stateProvince","decimalLatitude","decimalLongitude")]
+
+# test$stateProvince[test$stateProvince=="",]<- cities_list$stateProvince[match(test$locality, cities_list$locality)]
+
+state_provences <- character(nrow(test))
+# time-consuming step (parallelize?)
+for (i in 1:nrow(test)) {
+  distances <- stringdist(test$locality[i], cities_list$locality)
+  closest_index <- which.min(distances)
+  if (distances[closest_index] < 0.5) {
+    state_provences[i] <- cities_list$stateProvince[closest_index]
+  } else {
+    state_provences[i] <- NA 
+  }
+}
+test$stateProvince <- state_provences
 
 ```
   Accounting for Count Data
