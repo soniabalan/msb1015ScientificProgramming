@@ -195,12 +195,14 @@ cities_list = cities_list %>% select(-c("JUDET.AUTO",
 colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
 
 test = data[,c("locality", "stateProvince","decimalLatitude","decimalLongitude")]
+print(sum(test$stateProvince==""))
 
-# test$stateProvince[test$stateProvince=="",]<- cities_list$stateProvince[match(test$locality, cities_list$locality)]
+missing_indices <- which(test$stateProvince=="" & test$locality!="")
+state_provences <- character(length(missing_indices))
 
-state_provences <- character(nrow(test))
-# time-consuming step (parallelize?)
-for (i in 1:nrow(test)) {
+# time-consuming step - can still parallelize
+for (i in missing_indices) {
+  
   distances <- stringdist(test$locality[i], cities_list$locality)
   closest_index <- which.min(distances)
   if (distances[closest_index] < 0.5) {
@@ -209,7 +211,10 @@ for (i in 1:nrow(test)) {
     state_provences[i] <- NA 
   }
 }
-test$stateProvince <- state_provences
+
+test$stateProvince[missing_indices] <- as.factor(state_provences[missing_indices])
+
+print(sum(is.na(test$stateProvince)))
 
 ```
   Accounting for Count Data
