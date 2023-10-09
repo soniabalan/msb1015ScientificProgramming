@@ -212,10 +212,9 @@ for (i in missing_indices) {
   }
 }
 
-test$stateProvince[missing_indices] <- as.factor(state_provences[missing_indices])
+test$stateProvince[missing_indices] <- as.factor(state_provences)
 
 print(sum(is.na(test$stateProvince)))
-
 ```
   Accounting for Count Data
 ```{r}
