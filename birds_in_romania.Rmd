@@ -185,7 +185,11 @@ print(sum(is.na(data$day)))
   Location Data
   city/county database from https://github.com/romania/localitati
 ```{r}
-cities_per_county <- read.csv("orase.csv")
+cities_list <- read.csv("orase.csv")
+cities_list = cities_list %>% select(-c("JUDET.AUTO",
+                                        "POPULATIE..in.2002.",
+                                        "REGIUNE"))
+
 ```
   Accounting for Count Data
 ```{r}
