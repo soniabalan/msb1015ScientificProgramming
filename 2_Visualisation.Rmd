@@ -1,0 +1,199 @@
+---
+title: "Birds in Romania - 2 Visualization"
+author: "Sonia Balan"
+
+---
+
+```{r}
+
+```
+
+  Accounting for Count Data
+```{r}
+# function to obtain the accurate number of counts per feature
+process_counts_per_feature <- function(df, feature, taxon_level) {
+  counts <- df %>%
+  group_by(.data[[feature]], .data[[taxon_level]]) %>%
+  summarise(total_count = sum(individualCount))
+  
+  return(counts)
+}
+
+# getting he total number of occuernces per taxon level (to be used for normalization)
+process_counts <- function(df, taxon_level){
+  counts <- df %>%
+  group_by(.data[[taxon_level]]) %>%
+  summarise(total_count = sum(individualCount))
+  
+  return(counts)
+}
+ 
+```
+# Diagnostics Plots -------------------------------
+  Cutoff Decision
+```{r}
+data_vis <- read.csv("data_filled_gaps.csv",
+                 header=TRUE,
+                 stringsAsFactors=TRUE)
+
+ggplot(data_vis,aes(year)) +
+  geom_bar(color = "#00501B") +
+  geom_vline(xintercept = 2005,
+             linewidth = 0.5,
+             color = "black") 
+```
+  More exploratory figures
+```{r}
+# ---------------
+data_vis <- data_vis[which(data_vis$year > 2004 ), ]
+
+# Occurences per time unit ------
+# nr of occurences/year
+ggplot(data_vis, aes(year)) +
+  geom_bar(fill = "#0E6251",
+           fill = 0.75)+
+  labs(title = paste("Occurences per Year"),
+     x = "Month",
+     y = "Count")
+
+# nr of occurences/month 
+ggplot(data_vis, aes(month, fill = month)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Month"),
+     x = "Month",
+     y = "Count")
+
+# nr of occurences/day
+ggplot(data_vis, aes(day)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Day"),
+     x = "Month",
+     y = "Count")
+
+# occurences per location ------
+# Locality\
+loc <- data_vis %>%
+  group_by(locality) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(11,n)
+loc <- loc[-which(loc$locality == ""), ]
+
+ggplot(loc, aes(x = reorder(locality, n), y = n, fill = locality)) +
+  geom_bar(stat = "identity",
+           fill = "#1B4F72", 
+           alpha = 0.75) +
+    coord_polar("y", start=0) +
+  labs(title = paste("Occurences per Locality"),
+     x = "Locality",
+     y = "Count")
+
+# province
+prov <- data_vis %>%
+  group_by(stateProvince) %>%
+  summarize(n = n()) %>%
+  arrange(desc(n)) %>%
+  top_n(11,n)
+prov <- prov[-which(prov$stateProvince == ""), ]
+  
+ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = stateProvence)) +
+  geom_bar(stat = "identity",
+           alpha = 0.75) +
+  coord_polar("y", start=0) +
+  labs(title = paste("Occurences per County"),
+     x = "County",
+     y = "Count")
+
+# latitude and longitude
+ggplot(data_vis, aes(decimalLatitude)) +
+  geom_histogram(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Latitude"),
+     x = "Latitude",
+     y = "Count")
+ggplot(data_vis, aes(decimalLongitude)) +
+  geom_histogram(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Occurences per Longitude"),
+     x = "Longitude",
+     y = "Count")
+
+# OBSERVATION BASIS ----------------
+ggplot(data_vis, aes(collectionCode)) +
+  geom_bar(fill = "#1B4F72", 
+           alpha = 0.75) +
+  labs(title = paste("Organization"),
+     x = "Type",
+     y = "Count")
+
+
+
+```
+
+# Changes over time
+```{r}
+# top species ------
+spp_total <- process_counts(data_vis, "species")
+spp_top <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 11)
+spp_top_sans1 <- spp_top[-1,]
+
+# most abundent birds (overall)
+ggplot(spp_top, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Species"),
+     x = "Species",
+     y = "Abundance")
+# most abundent birds (overall), without Anser albiformis (outlier?)
+ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Species"),
+     x = "Species",
+     y = "Abundance")
+
+# top genus --------
+gen_total <- process_counts(data_vis, "genus")
+gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
+# most abundent birds (overall)
+ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Genuses"),
+     x = "Genus",
+     y = "Abundance")
+# most abundent birds (overall) without waxwings
+gen_top_sans1 <- gen_top[-2,]
+ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title = paste("Top Genuses"),
+     x = "Genus",
+     y = "Abundance")
+
+# plot all months ----
+ord_per_month <- process_counts_per_feature(data_vis,"month","order")
+ggplot(ord_per_month, aes(month , y = order)) +
+  geom_line() +
+  geom_point() +
+  theme(legend.position="none") +
+  labs(title = "Presence/month by Order",
+       x = "Month")
+#  + color seasons in the background
+
+# species per month
+fan_per_month <- process_counts_per_feature(data_vis, "month", "order")
+# spp_per_month_norm # ???
+
+ggplot(fan_per_month, aes(month , y = total_count, color = order)) +
+  geom_line() +
+  # geom_point() +
+  # theme(legend.position="none") +
+  labs(title = "Presence/month by Family",
+       x = "Month")
+
+```
+
+
