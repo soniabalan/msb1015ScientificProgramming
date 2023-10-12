@@ -236,14 +236,90 @@ print(sum(data$stateProvince==""))
 #     state_provences[i] <- NA 
 #   }
 # }
-
-
-
-# save to easily access the cleaned data when you want to skip the time-consuming step of getting the province data
-write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
 ```
     - filter based on coordinates
 ```{r}
 
+library(ggplot2)
 
+coord_by_province <- cities_list %>%
+  group_by(stateProvince) %>%
+  summarize(
+    min_lon = min(decimalLongitude),
+    max_lon = max(decimalLongitude),
+    min_lat = min(decimalLatitude),
+    max_lat = max(decimalLatitude)
+  )
+
+# check distribution of longitude values per province
+histograms_lon <- cities_list %>%
+  group_by(stateProvince) %>%
+  ggplot(aes(x = decimalLongitude)) +
+  geom_histogram(binwidth = 0.5) +
+  facet_wrap(~stateProvince) +
+  labs(title = "Longitude Distribution by Region")
+histograms_lon
+
+# check distribution of latitude values per province
+histograms_lat <- cities_list %>%
+  group_by(stateProvince) %>%
+  ggplot(aes(x = decimalLatitude)) +
+  geom_histogram(binwidth = 0.5) +
+  facet_wrap(~stateProvince) +
+  labs(title = "Longitude Distribution by Region")
+
+histograms_lat
+
+test = data[,c("stateProvince","decimalLongitude","decimalLatitude")]
+
+'Unparalelized Version'
+missing_indices <- which(is.na(data$stateProvince) &
+                           !is.na(data$decimalLatitude) &
+                           !is.na(data$decimalLongitude))
+
+for (i in missing_indices){
+  region <- coord_by_province %>%
+    filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat & 
+           test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
+    select(stateProvince)
+  if (length(region$stateProvince)>0){
+    test$stateProvince[i] <- region$stateProvince
+  }
+}
+
+
+'Paralelized Version'
+# cl <- makeCluster(num_cores)
+# registerDoParallel(cl)
+# 
+# filter_coordinates <- function(i){
+#   region <- coord_by_province %>%
+#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat & 
+#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
+#     select(stateProvince)
+#   if (length(region$stateProvince)>0){
+#     return(region$stateProvince)
+#   }
+# }
+# 
+# missing_indices <- which(is.na(data$stateProvince) &
+#                            !is.na(data$decimalLatitude) &
+#                            !is.na(data$decimalLongitude))
+# state_provences <- character(length(missing_indices))
+# state_provences <- foreach(i = missing_indices, .packages = c("dplyr")) %dopar% {
+#   filter_coordinates(i)
+# }
+# 
+# # Stop the parallel
+# stopCluster(cl)
+# 
+# data$stateProvince[missing_indices] <- state_provences
+
+print(length(missing_indices))
+print(sum(is.na(test$stateProvince)))
+
+```
+# Export Processed Data
+```{r}
+write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
 ```
