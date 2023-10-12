@@ -26,6 +26,9 @@ Data Info:
 # install.packages("ggplot2")
 # install.packages("stringr")
 # install.packages("stringdist")
+# install.packages("microbenchmark")
+# install.packages("doParallel")
+
 
 # Libraries loading
 library(rgbif)
@@ -34,6 +37,8 @@ library(ggplot2)
 library(stringr)
 library(rstudioapi)
 library(stringdist)
+library(microbenchmark)
+library(doParallel)
 
 # set wrok environment
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
@@ -152,26 +157,26 @@ print(sum(is.na(data$year)))
 print(sum(is.na(data$month)))
 print(sum(is.na(data$day)))
 
-# add missing year information from other columns 
-data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
-  format(
-    data$dateIdentified[which(
-      is.na(data$year) & !is.na(data$dateIdentified))],
-    '%Y'))
-
-# add missing day information from other columns
-data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
-  format(
-    data$dateIdentified[which(
-      is.na(data$day) & !is.na(data$dateIdentified))],
-    '%d'))
-
-# add missing month information from other columns
-data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
-  format(
-    data$dateIdentified[which(
-      is.na(data$month) & !is.na(data$dateIdentified))],
-    '%m'))
+# # add missing year information from other columns 
+# data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
+#   format(
+#     data$dateIdentified[which(
+#       is.na(data$year) & !is.na(data$dateIdentified))],
+#     '%Y'))
+# 
+# # add missing day information from other columns
+# data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
+#   format(
+#     data$dateIdentified[which(
+#       is.na(data$day) & !is.na(data$dateIdentified))],
+#     '%d'))
+# 
+# # add missing month information from other columns
+# data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
+#   format(
+#     data$dateIdentified[which(
+#       is.na(data$month) & !is.na(data$dateIdentified))],
+#     '%m'))
 
 data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
 
@@ -197,24 +202,56 @@ colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","state
 test = data[,c("locality", "stateProvince","decimalLatitude","decimalLongitude")]
 print(sum(test$stateProvince==""))
 
-missing_indices <- which(test$stateProvince=="" & test$locality!="")
-state_provences <- character(length(missing_indices))
+# missing_indices <- which(test$stateProvince=="" & test$locality!="")
+# state_provences <- character(length(missing_indices))
+# 
+# # time-consuming step - can still parallelize
+# for (i in missing_indices) {
+#   
+#   distances <- stringdist(test$locality[i], cities_list$locality)
+#   closest_index <- which.min(distances)
+#   if (distances[closest_index] < 0.5) {
+#     state_provences[i] <- cities_list$stateProvince[closest_index]
+#   } else {
+#     state_provences[i] <- NA 
+#   }
+# }
 
-# time-consuming step - can still parallelize
-for (i in missing_indices) {
-  
+#############################################
+num_cores <- 4
+
+# Initialize a parallel
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+# Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
+calculate_closest_city <- function(i) {
   distances <- stringdist(test$locality[i], cities_list$locality)
   closest_index <- which.min(distances)
   if (distances[closest_index] < 0.5) {
     state_provences[i] <- cities_list$stateProvince[closest_index]
   } else {
-    state_provences[i] <- NA 
+    state_provences[i] <- NA
   }
 }
 
+# Parallelize the loop (still takes a lot of time)
+missing_indices <- which(test$stateProvince=="" & test$locality!="")
+state_provences <- character(length(missing_indices))
+state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
+  calculate_closest_city(i)
+}
+
+# Stop the parallel 
+stopCluster(cl)
+
+# add the identified province data in the dataset
 test$stateProvince[missing_indices] <- as.factor(state_provences)
 
 print(sum(is.na(test$stateProvince)))
+
+# save to easily access the cleaned data when you want to skip the time-consuming step of getting the province data
+write.csv(data, "ProcessedData\data_filled_gaps.csv", row.names=FALSE)
 ```
   Accounting for Count Data
 ```{r}
@@ -240,6 +277,10 @@ process_counts <- function(df, taxon_level){
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
+# data <- read.csv("ProcessedData\data_filled_gaps.csv",
+#                  header=TRUE,
+#                  stringsAsFactors=TRUE)
+
 ggplot(data,aes(year)) +
   geom_bar(color = "#00501B") +
   geom_vline(xintercept = 2005,
