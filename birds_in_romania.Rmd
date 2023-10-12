@@ -153,39 +153,14 @@ data = data %>% select(-c("verbatimScientificName"))
   Dates
 ```{r}
 print("before")
-print(sum(is.na(data$year)))
-print(sum(is.na(data$month)))
-print(sum(is.na(data$day)))
+print(sum(is.na(data$eventDate)))
 
-# # add missing year information from other columns 
-# data$year[which(is.na(data$year) & !is.na(data$dateIdentified))] <- as.numeric(
-#   format(
-#     data$dateIdentified[which(
-#       is.na(data$year) & !is.na(data$dateIdentified))],
-#     '%Y'))
-# 
-# # add missing day information from other columns
-# data$day[which(is.na(data$day) & !is.na(data$dateIdentified))] <- as.numeric(
-#   format(
-#     data$dateIdentified[which(
-#       is.na(data$day) & !is.na(data$dateIdentified))],
-#     '%d'))
-# 
-# # add missing month information from other columns
-# data$month[which(is.na(data$month) & !is.na(data$dateIdentified))] <- as.factor(
-#   format(
-#     data$dateIdentified[which(
-#       is.na(data$month) & !is.na(data$dateIdentified))],
-#     '%m'))
 
 data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
 
 # remaining NAs
 print("after")
-print(sum(is.na(data$year)))
-print(sum(is.na(data$month)))
-print(sum(is.na(data$day)))
-# note - forgot to run from begining and after adding the data from dateIdentified, eventDate doesn't add anyting new.
+print(sum(is.na(data$eventDate)))
 
 # data = data %>% select(-c("dateIdentified"))
 ```
@@ -196,49 +171,53 @@ print(sum(is.na(data$day)))
 'RUN THESE LINES TO GO THROUGH THE PROCESS OF IDENTIFYING THE MISSING PROVINCES'
 'This process is very time consuming, even when parallelized on 4 cores'
 
-# cities_list <- read.csv("orase.csv")
-# cities_list = cities_list %>% select(c("X",
-#                                        "Y",
-#                                        "NUME",
-#                                        "JUDET"))
-# # rename columns
-# colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
-# print(sum(data$stateProvince==""))
+cities_list <- read.csv("orase.csv")
+cities_list = cities_list %>% select(c("X",
+                                       "Y",
+                                       "NUME",
+                                       "JUDET"))
+# rename columns
+colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
+print(sum(data$stateProvince==""))
 
 ###########################################################
 'The Paralelized Process'
-# num_cores <- 4
-# 
-# # Initialize a parallel
-# cl <- makeCluster(num_cores)
-# registerDoParallel(cl)
-# 
-# # Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
-# calculate_closest_city <- function(i, state_provences) {
-#   distances <- stringdist(data$locality[i], cities_list$locality)
-#   closest_index <- which.min(distances)
-#   if (distances[closest_index] < 0.5) {
-#     return(cities_list$stateProvince[closest_index])
-#   } else {
-#     return(NA)
-#   }
-# }
-# 
-# # Parallelize the loop (still takes a lot of time)
-# missing_indices <- which(data$stateProvince=="" & data$locality!="")
-# state_provences <- character(length(missing_indices))
-# state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
-#   calculate_closest_city(i)
-# }
-# 
-# # Stop the parallel 
-# stopCluster(cl)
-# 
-# # add the identified province data in the dataset
-# data$stateProvince[missing_indices] <- state_provences
-# 
-# print(sum(is.na(data$stateProvince)))
-# print(sum(data$stateProvince==""))
+num_cores <- 4
+
+# Initialize a parallel
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+# Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
+calculate_closest_city <- function(i, state_provences) {
+  distances <- stringdist(data$locality[i], cities_list$locality)
+  closest_index <- which.min(distances)
+  # the function only returns a county if the distance is very small, otherwise returns NA
+  if (distances[closest_index] < 0.5) {
+    return(cities_list$stateProvince[closest_index])
+  } else { 
+    return(NA)
+  }
+}
+
+
+# only perform the search for rows that don't already have province infromation, and that have locality information
+missing_indices <- which(data$stateProvince=="" & data$locality!="")
+state_provences <- character(length(missing_indices))
+
+# the paralel loop process of identifying provinces
+state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
+  calculate_closest_city(i)
+}
+
+# Stop the parallel
+stopCluster(cl)
+
+# add the identified province data in the dataset
+data$stateProvince[missing_indices] <- state_provences
+
+print(sum(is.na(data$stateProvince)))
+print(sum(data$stateProvince==""))
 
 
 ############################################################
@@ -262,7 +241,7 @@ print(sum(is.na(data$day)))
 
 
 # save to easily access the cleaned data when you want to skip the time-consuming step of getting the province data
-# write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
+write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
 ```
   Accounting for Count Data
 ```{r}
@@ -288,11 +267,11 @@ process_counts <- function(df, taxon_level){
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
-data <- read.csv("data_filled_gaps.csv",
+data_vis <- read.csv("data_filled_gaps.csv",
                  header=TRUE,
                  stringsAsFactors=TRUE)
 
-ggplot(data,aes(year)) +
+ggplot(data_vis,aes(year)) +
   geom_bar(color = "#00501B") +
   geom_vline(xintercept = 2005,
              linewidth = 0.5,
@@ -301,7 +280,7 @@ ggplot(data,aes(year)) +
   More exploratory figures
 ```{r}
 # ---------------
-data_vis <- data[which(data$year > 2004 ), ]
+data_vis <- data_vis[which(data_vis$year > 2004 ), ]
 
 # Occurences per time unit ------
 # nr of occurences/year
