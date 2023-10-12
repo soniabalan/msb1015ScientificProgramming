@@ -193,9 +193,10 @@ print(sum(is.na(data$day)))
   city/county database from https://github.com/romania/localitati
 ```{r}
 cities_list <- read.csv("orase.csv")
-cities_list = cities_list %>% select(-c("JUDET.AUTO",
-                                        "POPULATIE..in.2002.",
-                                        "REGIUNE"))
+cities_list = cities_list %>% select(c("X",
+                                       "Y",
+                                       "ORAS",
+                                       "JUDET"))
 # rename columns
 colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
 
@@ -225,7 +226,7 @@ cl <- makeCluster(num_cores)
 registerDoParallel(cl)
 
 # Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
-calculate_closest_city <- function(i) {
+calculate_closest_city <- function(i, state_provences) {
   distances <- stringdist(test$locality[i], cities_list$locality)
   closest_index <- which.min(distances)
   if (distances[closest_index] < 0.5) {
