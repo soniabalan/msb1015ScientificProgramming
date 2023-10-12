@@ -195,21 +195,22 @@ print(sum(is.na(data$day)))
 cities_list <- read.csv("orase.csv")
 cities_list = cities_list %>% select(c("X",
                                        "Y",
-                                       "ORAS",
+                                       "NUME",
                                        "JUDET"))
 # rename columns
 colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
 
 test = data[,c("locality", "stateProvince","decimalLatitude","decimalLongitude")]
-print(sum(test$stateProvince==""))
 
-# missing_indices <- which(test$stateProvince=="" & test$locality!="")
+print(sum(data$stateProvince==""))
+
+# missing_indices <- which(data$stateProvince=="" & data$locality!="")
 # state_provences <- character(length(missing_indices))
 # 
 # # time-consuming step - can still parallelize
 # for (i in missing_indices) {
 #   
-#   distances <- stringdist(test$locality[i], cities_list$locality)
+#   distances <- stringdist(data$locality[i], cities_list$locality)
 #   closest_index <- which.min(distances)
 #   if (distances[closest_index] < 0.5) {
 #     state_provences[i] <- cities_list$stateProvince[closest_index]
@@ -227,17 +228,17 @@ registerDoParallel(cl)
 
 # Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
 calculate_closest_city <- function(i, state_provences) {
-  distances <- stringdist(test$locality[i], cities_list$locality)
+  distances <- stringdist(data$locality[i], cities_list$locality)
   closest_index <- which.min(distances)
   if (distances[closest_index] < 0.5) {
-    state_provences[i] <- cities_list$stateProvince[closest_index]
+    return(cities_list$stateProvince[closest_index])
   } else {
-    state_provences[i] <- NA
+    return(NA)
   }
 }
 
 # Parallelize the loop (still takes a lot of time)
-missing_indices <- which(test$stateProvince=="" & test$locality!="")
+missing_indices <- which(data$stateProvince=="" & data$locality!="")
 state_provences <- character(length(missing_indices))
 state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
   calculate_closest_city(i)
@@ -247,9 +248,10 @@ state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %do
 stopCluster(cl)
 
 # add the identified province data in the dataset
-test$stateProvince[missing_indices] <- as.factor(state_provences)
+data$stateProvince[missing_indices] <- state_provences
 
-print(sum(is.na(test$stateProvince)))
+print(sum(is.na(data$stateProvince)))
+print(sum(data$stateProvince==""))
 
 # save to easily access the cleaned data when you want to skip the time-consuming step of getting the province data
 write.csv(data, "ProcessedData\data_filled_gaps.csv", row.names=FALSE)
