@@ -206,13 +206,13 @@ for (i in missing_indices){
     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
     select(stateProvince)
-  if (length(region$stateProvince)>0){
+  if (length(region$stateProvince)==1){
     test$stateProvince[i] <- region$stateProvince
   }
 }
 
 
-'Paralelized Version'
+'Paralelized Version' # doesn't work...
 # cl <- makeCluster(num_cores)
 # registerDoParallel(cl)
 # 
