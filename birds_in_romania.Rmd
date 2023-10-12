@@ -192,17 +192,57 @@ print(sum(is.na(data$day)))
   Location Data
   city/county database from https://github.com/romania/localitati
 ```{r}
-cities_list <- read.csv("orase.csv")
-cities_list = cities_list %>% select(c("X",
-                                       "Y",
-                                       "NUME",
-                                       "JUDET"))
-# rename columns
-colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
+############################################################
+'RUN THESE LINES TO GO THROUGH THE PROCESS OF IDENTIFYING THE MISSING PROVINCES'
+'This process is very time consuming, even when parallelized on 4 cores'
 
-test = data[,c("locality", "stateProvince","decimalLatitude","decimalLongitude")]
+# cities_list <- read.csv("orase.csv")
+# cities_list = cities_list %>% select(c("X",
+#                                        "Y",
+#                                        "NUME",
+#                                        "JUDET"))
+# # rename columns
+# colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
+# print(sum(data$stateProvince==""))
 
-print(sum(data$stateProvince==""))
+###########################################################
+'The Paralelized Process'
+# num_cores <- 4
+# 
+# # Initialize a parallel
+# cl <- makeCluster(num_cores)
+# registerDoParallel(cl)
+# 
+# # Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
+# calculate_closest_city <- function(i, state_provences) {
+#   distances <- stringdist(data$locality[i], cities_list$locality)
+#   closest_index <- which.min(distances)
+#   if (distances[closest_index] < 0.5) {
+#     return(cities_list$stateProvince[closest_index])
+#   } else {
+#     return(NA)
+#   }
+# }
+# 
+# # Parallelize the loop (still takes a lot of time)
+# missing_indices <- which(data$stateProvince=="" & data$locality!="")
+# state_provences <- character(length(missing_indices))
+# state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
+#   calculate_closest_city(i)
+# }
+# 
+# # Stop the parallel 
+# stopCluster(cl)
+# 
+# # add the identified province data in the dataset
+# data$stateProvince[missing_indices] <- state_provences
+# 
+# print(sum(is.na(data$stateProvince)))
+# print(sum(data$stateProvince==""))
+
+
+############################################################
+'The un-parallelized version of the process'
 
 # missing_indices <- which(data$stateProvince=="" & data$locality!="")
 # state_provences <- character(length(missing_indices))
@@ -219,42 +259,10 @@ print(sum(data$stateProvince==""))
 #   }
 # }
 
-#############################################
-num_cores <- 4
 
-# Initialize a parallel
-cl <- makeCluster(num_cores)
-registerDoParallel(cl)
-
-# Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
-calculate_closest_city <- function(i, state_provences) {
-  distances <- stringdist(data$locality[i], cities_list$locality)
-  closest_index <- which.min(distances)
-  if (distances[closest_index] < 0.5) {
-    return(cities_list$stateProvince[closest_index])
-  } else {
-    return(NA)
-  }
-}
-
-# Parallelize the loop (still takes a lot of time)
-missing_indices <- which(data$stateProvince=="" & data$locality!="")
-state_provences <- character(length(missing_indices))
-state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
-  calculate_closest_city(i)
-}
-
-# Stop the parallel 
-stopCluster(cl)
-
-# add the identified province data in the dataset
-data$stateProvince[missing_indices] <- state_provences
-
-print(sum(is.na(data$stateProvince)))
-print(sum(data$stateProvince==""))
 
 # save to easily access the cleaned data when you want to skip the time-consuming step of getting the province data
-write.csv(data, "ProcessedData\data_filled_gaps.csv", row.names=FALSE)
+# write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
 ```
   Accounting for Count Data
 ```{r}
@@ -280,9 +288,9 @@ process_counts <- function(df, taxon_level){
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
-# data <- read.csv("ProcessedData\data_filled_gaps.csv",
-#                  header=TRUE,
-#                  stringsAsFactors=TRUE)
+data <- read.csv("data_filled_gaps.csv",
+                 header=TRUE,
+                 stringsAsFactors=TRUE)
 
 ggplot(data,aes(year)) +
   geom_bar(color = "#00501B") +
