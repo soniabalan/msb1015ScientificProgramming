@@ -163,21 +163,113 @@ print(sum(is.na(data$eventDate)))
 # data = data %>% select(-c("dateIdentified"))
 ```
   Location Data
-  city/county database from https://github.com/romania/localitati
-    - filter based on locality
+  Using information from: city/county database from https://github.com/romania/localitati
 ```{r}
 ############################################################
-'RUN THESE LINES TO GO THROUGH THE PROCESS OF IDENTIFYING THE MISSING PROVINCES'
-'This process is very time consuming, even when parallelized on 4 cores'
-
-cities_list <- read.csv("orase.csv")
+cities_list <- read.csv("orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",
                                        "NUME",
                                        "JUDET"))
+
+
 # rename columns
 colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
-print(sum(data$stateProvince==""))
+# print(sum(data$stateProvince==""))
+
+# remove stateProvince levels that are NOT real provinces in Romania
+unwanted_levels <- setdiff(levels(data$stateProvince), levels(cities_list$stateProvince))
+levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- NA
+
+# print(levels(data$stateProvince))
+```
+    - filter based on coordinates
+```{r}
+
+library(ggplot2)
+
+coord_by_province <- cities_list %>%
+  group_by(stateProvince) %>%
+  summarize(
+    min_lon = min(decimalLongitude),
+    max_lon = max(decimalLongitude),
+    min_lat = min(decimalLatitude),
+    max_lat = max(decimalLatitude)
+  )
+
+# # check distribution of longitude values per province
+# histograms_lon <- cities_list %>%
+#   group_by(stateProvince) %>%
+#   ggplot(aes(x = decimalLongitude)) +
+#   geom_histogram(binwidth = 0.5) +
+#   facet_wrap(~stateProvince) +
+#   labs(title = "Longitude Distribution by Region")
+# histograms_lon
+# 
+# # check distribution of latitude values per province
+# histograms_lat <- cities_list %>%
+#   group_by(stateProvince) %>%
+#   ggplot(aes(x = decimalLatitude)) +
+#   geom_histogram(binwidth = 0.5) +
+#   facet_wrap(~stateProvince) +
+#   labs(title = "Longitude Distribution by Region")
+# 
+# histograms_lat
+
+test = data[,c("stateProvince","decimalLongitude","decimalLatitude")]
+
+'Unparalelized Version'
+# missing_indices <- which(is.na(data$stateProvince) &
+#                            !is.na(data$decimalLatitude) &
+#                            !is.na(data$decimalLongitude))
+# test_indices = head(missing_indices)
+# 
+# for (i in test_indices){
+#   region <- coord_by_province %>%
+#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat & 
+#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
+#     select(stateProvince)
+#   if (length(region$stateProvince)>0){
+#     test$stateProvince[i] <- region$stateProvince
+#   }
+# }
+
+
+'Paralelized Version'
+cl <- makeCluster(num_cores)
+registerDoParallel(cl)
+
+filter_coordinates <- function(i){
+  region <- coord_by_province %>%
+    filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
+           test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
+    select(stateProvince)
+  # assign a new state province if and only if a single province was identified 
+  if (nrow(region$stateProvince)==1){
+    return(region$stateProvince)
+  }
+}
+
+missing_indices <- which(is.na(data$stateProvince) &
+                           !is.na(data$decimalLatitude) &
+                           !is.na(data$decimalLongitude))
+# test_indices = head(missing_indices)
+state_provences <- character(length(missing_indices))
+state_provences <- foreach(i = missing_indices, .packages = c("dplyr")) %dopar% {
+  filter_coordinates(i)
+}
+
+# Stop the parallel
+stopCluster(cl)
+
+test$stateProvince[missing_indices] <- state_provences
+
+print(length(missing_indices))
+print(sum(is.na(test$stateProvince)))
+
+```
+    - filter based on locality name
+```{r}
 
 ###########################################################
 'The Paralelized Process'
@@ -201,7 +293,7 @@ calculate_closest_city <- function(i, state_provences) {
 
 
 # only perform the search for rows that don't already have province infromation, and that have locality information
-missing_indices <- which(data$stateProvince=="" & data$locality!="")
+missing_indices <- which(is.na(data$stateProvince) & data$locality!="")
 state_provences <- character(length(missing_indices))
 
 # the paralel loop process of identifying provinces
@@ -236,88 +328,6 @@ print(sum(data$stateProvince==""))
 #     state_provences[i] <- NA 
 #   }
 # }
-```
-    - filter based on coordinates
-```{r}
-
-library(ggplot2)
-
-coord_by_province <- cities_list %>%
-  group_by(stateProvince) %>%
-  summarize(
-    min_lon = min(decimalLongitude),
-    max_lon = max(decimalLongitude),
-    min_lat = min(decimalLatitude),
-    max_lat = max(decimalLatitude)
-  )
-
-# check distribution of longitude values per province
-histograms_lon <- cities_list %>%
-  group_by(stateProvince) %>%
-  ggplot(aes(x = decimalLongitude)) +
-  geom_histogram(binwidth = 0.5) +
-  facet_wrap(~stateProvince) +
-  labs(title = "Longitude Distribution by Region")
-histograms_lon
-
-# check distribution of latitude values per province
-histograms_lat <- cities_list %>%
-  group_by(stateProvince) %>%
-  ggplot(aes(x = decimalLatitude)) +
-  geom_histogram(binwidth = 0.5) +
-  facet_wrap(~stateProvince) +
-  labs(title = "Longitude Distribution by Region")
-
-histograms_lat
-
-test = data[,c("stateProvince","decimalLongitude","decimalLatitude")]
-
-'Unparalelized Version'
-missing_indices <- which(is.na(data$stateProvince) &
-                           !is.na(data$decimalLatitude) &
-                           !is.na(data$decimalLongitude))
-
-for (i in missing_indices){
-  region <- coord_by_province %>%
-    filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat & 
-           test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
-    select(stateProvince)
-  if (length(region$stateProvince)>0){
-    test$stateProvince[i] <- region$stateProvince
-  }
-}
-
-
-'Paralelized Version'
-# cl <- makeCluster(num_cores)
-# registerDoParallel(cl)
-# 
-# filter_coordinates <- function(i){
-#   region <- coord_by_province %>%
-#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat & 
-#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
-#     select(stateProvince)
-#   if (length(region$stateProvince)>0){
-#     return(region$stateProvince)
-#   }
-# }
-# 
-# missing_indices <- which(is.na(data$stateProvince) &
-#                            !is.na(data$decimalLatitude) &
-#                            !is.na(data$decimalLongitude))
-# state_provences <- character(length(missing_indices))
-# state_provences <- foreach(i = missing_indices, .packages = c("dplyr")) %dopar% {
-#   filter_coordinates(i)
-# }
-# 
-# # Stop the parallel
-# stopCluster(cl)
-# 
-# data$stateProvince[missing_indices] <- state_provences
-
-print(length(missing_indices))
-print(sum(is.na(test$stateProvince)))
-
 ```
 # Export Processed Data
 ```{r}
