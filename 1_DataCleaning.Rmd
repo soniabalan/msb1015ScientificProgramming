@@ -31,7 +31,6 @@ Data Info:
 # install.packages("sf") # co=requisite of "rgeos", takes a long time to install
 # install.packages("rgeos") 
 # install.packages("httr")
-# install.packages("osmdata")
 
 
 # Libraries loading
@@ -214,38 +213,31 @@ test_indices = head(missing_indices, n = 10)
 cities_sp <- SpatialPointsDataFrame(coords = test[missing_indices, c("decimalLongitude", "decimalLatitude")], data=test[missing_indices,])
 
 
-# Create a "dictionary" of Polygon objects
-province_list <- unique(coord_by_province$stateProvince)
+# Create a "dictionary" of Polygon 
 
+province_list <- unique(coord_by_province$stateProvince)
 prov_boundaries <- list()
 
-# Calculate perimeter for each cloud of points
+# Find the perimeter for each cloud of points (each point representing a city) that represents the boundary of a province
 for (province in province_list) {
-  province <- coord_by_province[coord_by_province$stateProvince == state_name, ]
+  prov_data <- coord_by_province[coord_by_province$stateProvince == province, ]
   
-  coord <- province[, c("lon_list", "lat_list")]
+  # find the convex hull of each province
+  coord <- prov_data[, c("lon_list", "lat_list")]
   points <- SpatialPoints(coord)
   convex_hull <- gConvexHull(points)
+  polygon_object <- convex_hull@polygons[[1]]
   
   # Add the boundary to the list
-  prov_boundaries[[state_name]] <- convex_hull
+  prov_boundaries[[province]] <- polygon_object
 }
 
-# Visualize the boundaries (optional)
-plot(prov_boundaries)
-
-
-
-# creates a polygon list
-state_polygons <- lapply(province_list, function(state) {
-  state_data <- coord_by_province[coord_by_province$stateProvince == state, ]
-  PolygonCoords <- cbind(state_data$lon_list, state_data$lat_list)
-  Polygons(list(Polygon(PolygonCoords)), ID = as.character(state))
-})
 # creates a SpatialPolygons object
-states_sp <- SpatialPolygons(state_polygons)
+states_sp <- SpatialPolygons(prov_boundaries)
+
+
 # removes overalp between areas
-states_sp_buffered <- gBuffer(states_sp, width = 0.5)
+states_sp_buffered <- gBuffer(prov_boundaries, width = 0.5)
 
 states_spdf <- SpatialPolygonsDataFrame(
   states_sp,
