@@ -27,6 +27,9 @@ Data Info:
 # install.packages("stringdist")
 # install.packages("microbenchmark")
 # install.packages("doParallel")
+# install.packages("sp")
+# install.packages("sf") # co=requisite of "rgeos", takes a long time to install
+# install.packages("rgeos")
 
 
 # Libraries loading
@@ -37,6 +40,8 @@ library(rstudioapi)
 library(stringdist)
 library(microbenchmark)
 library(doParallel)
+library(sp)
+library(rgeos)
 
 # set wrok environment
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
@@ -187,31 +192,78 @@ levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- N
 coord_by_province <- cities_list %>%
   group_by(stateProvince) %>%
   summarize(
-    min_lon = min(decimalLongitude),
-    max_lon = max(decimalLongitude),
-    min_lat = min(decimalLatitude),
-    max_lat = max(decimalLatitude)
+    lon_list = sort(decimalLongitude),
+    # max_lon = max(decimalLongitude),
+    # min_lat = min(decimalLatitude),
+    lat_list = sort(decimalLatitude)
   )
 
 test = data[,c("stateProvince","decimalLongitude","decimalLatitude")]
 
-'Unparallelized Version'
 missing_indices <- which(is.na(data$stateProvince) &
                            !is.na(data$decimalLatitude) &
                            !is.na(data$decimalLongitude))
-# test_indices = head(missing_indices)
+test_indices = head(missing_indices, n = 10)
 
-for (i in missing_indices){
-  region <- coord_by_province %>%
-    filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
-           test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
-    select(stateProvince)
-  if (length(region$stateProvince)==1){
-    test$stateProvince[i] <- region$stateProvince
+########################################################
+'Geography Package Version?'
+
+# Create SpatialPointsDataFrame from coordinates in the data
+cities_sp <- SpatialPointsDataFrame(coords = test[missing_indices, c("decimalLongitude", "decimalLatitude")], data=test[missing_indices,])
+
+
+# Create a "dictionary" of Polygon objects 
+province_list <- unique(coord_by_province$stateProvince)
+# creates a polygon list
+state_polygons <- lapply(province_list, function(state) {
+  state_data <- coord_by_province[coord_by_province$stateProvince == state, ]
+  PolygonCoords <- cbind(state_data$lon_list, state_data$lat_list)
+  Polygons(list(Polygon(PolygonCoords)), ID = as.character(state))
+})
+# creates a SpatialPolygons object
+states_sp <- SpatialPolygons(state_polygons)
+# removes overalp between areas
+states_sp_buffered <- gBuffer(states_sp, width = 0.5) 
+
+states_spdf <- SpatialPolygonsDataFrame(
+  states_sp,
+  data = data.frame(stateProvince = province_list)
+)
+
+states_tree <- gUnaryUnion(states_sp, id = data.frame(stateProvince = province_list))
+
+
+
+# Loop through the missing_indices and use spatial index to find the state
+
+for (i in length(cities_sp)) {
+  point <- cities_sp[i, ]
+  hits <- over(point, states_tree)
+  
+  if (!is.null(hits)) {
+    test$stateProvince[missing_indices[i]] <- hits
   }
 }
 
+print(summary(test[missing_indices,]))
+#################################################
+'Unparallelized Version'
+# missing_indices <- which(is.na(data$stateProvince) &
+#                            !is.na(data$decimalLatitude) &
+#                            !is.na(data$decimalLongitude))
+# # test_indices = head(missing_indices)
+# 
+# for (i in missing_indices){
+#   region <- coord_by_province %>%
+#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
+#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
+#     select(stateProvince)
+#   if (length(region$stateProvince)==1){
+#     test$stateProvince[i] <- region$stateProvince
+#   }
+# }
 
+#######################################################
 'Paralelized Version' # doesn't work...
 # cl <- makeCluster(num_cores)
 # registerDoParallel(cl)
