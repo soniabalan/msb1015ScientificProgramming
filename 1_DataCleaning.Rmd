@@ -320,25 +320,25 @@ print(sum(is.na(test$stateProvince)))
 
 #################################################
 'OpenSpaceMaps'
-library(httr)
-library(osmdata)
-
-osm_query <-  '
-  area[name="Romania"]->.searchArea;
-(
-  way[boundary=administrative][admin_level=4](area.searchArea);
-);
-out body;'
-
-getbb(place_name = "Romania") |> 
-    opq() |>
-    add_osm_feature(key = 'boundary', value = 'administrative',
-                    value_exact = F, key_exact = F) |>
-    osmdata_sf()
-
-q <- opq(osm_query)
-osm <- osmdata_sf(q)
-coords <- st_coordinates(result$osm_polygons)
+# library(httr)
+# library(osmdata)
+# 
+# osm_query <-  '
+#   area[name="Romania"]->.searchArea;
+# (
+#   way[boundary=administrative][admin_level=4](area.searchArea);
+# );
+# out body;'
+# 
+# getbb(place_name = "Romania") |> 
+#     opq() |>
+#     add_osm_feature(key = 'boundary', value = 'administrative',
+#                     value_exact = F, key_exact = F) |>
+#     osmdata_sf()
+# 
+# q <- opq(osm_query)
+# osm <- osmdata_sf(q)
+# coords <- st_coordinates(result$osm_polygons)
 
 ```
     - filter based on locality name
