@@ -211,8 +211,7 @@ test_indices = head(missing_indices, n = 10)
 cities_sp <- SpatialPointsDataFrame(coords = test[missing_indices, c("decimalLongitude", "decimalLatitude")], data=test[missing_indices,])
 
 
-# Create a "dictionary" of Polygon 
-
+##  Create a "dictionary" of Polygons ##
 province_list <- unique(coord_by_province$stateProvince)
 prov_boundaries <- list()
 
@@ -233,13 +232,15 @@ for (province in province_list) {
 
 # creates a SpatialPolygons object
 states_sp <- SpatialPolygons(prov_boundaries)
+states_sp_buffered <- gBuffer(states_sp, width = 0)
 
 states_spdf <- SpatialPolygonsDataFrame(
   states_sp,
-  data = data.frame(stateProvince = province_list)
+  data = data.frame(stateProvince = province_list),
+  match.ID = F
 )
 
-states_tree <- gUnaryUnion(states_sp, id = data.frame(stateProvince = province_list))
+states_tree <- gUnaryUnion(states_spdf, id = data.frame(stateProvince = province_list))
 
 
 
