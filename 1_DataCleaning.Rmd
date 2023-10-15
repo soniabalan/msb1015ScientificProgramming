@@ -29,7 +29,9 @@ Data Info:
 # install.packages("doParallel")
 # install.packages("sp")
 # install.packages("sf") # co=requisite of "rgeos", takes a long time to install
-# install.packages("rgeos")
+# install.packages("rgeos") 
+# install.packages("httr")
+# install.packages("osmdata")
 
 
 # Libraries loading
@@ -205,15 +207,35 @@ missing_indices <- which(is.na(data$stateProvince) &
                            !is.na(data$decimalLongitude))
 test_indices = head(missing_indices, n = 10)
 
-########################################################
+##############################################
 'Geography Package Version?'
-
+# 
 # Create SpatialPointsDataFrame from coordinates in the data
 cities_sp <- SpatialPointsDataFrame(coords = test[missing_indices, c("decimalLongitude", "decimalLatitude")], data=test[missing_indices,])
 
 
-# Create a "dictionary" of Polygon objects 
+# Create a "dictionary" of Polygon objects
 province_list <- unique(coord_by_province$stateProvince)
+
+prov_boundaries <- list()
+
+# Calculate perimeter for each cloud of points
+for (province in province_list) {
+  province <- coord_by_province[coord_by_province$stateProvince == state_name, ]
+  
+  coord <- province[, c("lon_list", "lat_list")]
+  points <- SpatialPoints(coord)
+  convex_hull <- gConvexHull(points)
+  
+  # Add the boundary to the list
+  prov_boundaries[[state_name]] <- convex_hull
+}
+
+# Visualize the boundaries (optional)
+plot(prov_boundaries)
+
+
+
 # creates a polygon list
 state_polygons <- lapply(province_list, function(state) {
   state_data <- coord_by_province[coord_by_province$stateProvince == state, ]
@@ -223,7 +245,7 @@ state_polygons <- lapply(province_list, function(state) {
 # creates a SpatialPolygons object
 states_sp <- SpatialPolygons(state_polygons)
 # removes overalp between areas
-states_sp_buffered <- gBuffer(states_sp, width = 0.5) 
+states_sp_buffered <- gBuffer(states_sp, width = 0.5)
 
 states_spdf <- SpatialPolygonsDataFrame(
   states_sp,
@@ -239,7 +261,7 @@ states_tree <- gUnaryUnion(states_sp, id = data.frame(stateProvince = province_l
 for (i in length(cities_sp)) {
   point <- cities_sp[i, ]
   hits <- over(point, states_tree)
-  
+
   if (!is.null(hits)) {
     test$stateProvince[missing_indices[i]] <- hits
   }
@@ -263,7 +285,7 @@ print(summary(test[missing_indices,]))
 #   }
 # }
 
-#######################################################
+#################################################
 'Paralelized Version' # doesn't work...
 # cl <- makeCluster(num_cores)
 # registerDoParallel(cl)
@@ -295,6 +317,28 @@ print(summary(test[missing_indices,]))
 
 print(length(missing_indices))
 print(sum(is.na(test$stateProvince)))
+
+#################################################
+'OpenSpaceMaps'
+library(httr)
+library(osmdata)
+
+osm_query <-  '
+  area[name="Romania"]->.searchArea;
+(
+  way[boundary=administrative][admin_level=4](area.searchArea);
+);
+out body;'
+
+getbb(place_name = "Romania") |> 
+    opq() |>
+    add_osm_feature(key = 'boundary', value = 'administrative',
+                    value_exact = F, key_exact = F) |>
+    osmdata_sf()
+
+q <- opq(osm_query)
+osm <- osmdata_sf(q)
+coords <- st_coordinates(result$osm_polygons)
 
 ```
     - filter based on locality name
