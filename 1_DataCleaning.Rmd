@@ -194,8 +194,6 @@ coord_by_province <- cities_list %>%
   group_by(stateProvince) %>%
   summarize(
     lon_list = sort(decimalLongitude),
-    # max_lon = max(decimalLongitude),
-    # min_lat = min(decimalLatitude),
     lat_list = sort(decimalLatitude)
   )
 
@@ -227,6 +225,7 @@ for (province in province_list) {
   points <- SpatialPoints(coord)
   convex_hull <- gConvexHull(points)
   polygon_object <- convex_hull@polygons[[1]]
+  polygon_object@ID <- as.character(province)
   
   # Add the boundary to the list
   prov_boundaries[[province]] <- polygon_object
@@ -234,10 +233,6 @@ for (province in province_list) {
 
 # creates a SpatialPolygons object
 states_sp <- SpatialPolygons(prov_boundaries)
-
-
-# removes overalp between areas
-states_sp_buffered <- gBuffer(prov_boundaries, width = 0.5)
 
 states_spdf <- SpatialPolygonsDataFrame(
   states_sp,
