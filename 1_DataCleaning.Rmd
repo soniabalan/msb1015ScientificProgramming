@@ -240,22 +240,30 @@ states_spdf <- SpatialPolygonsDataFrame(
   match.ID = F
 )
 
-states_tree <- gUnaryUnion(states_spdf, id = data.frame(stateProvince = province_list))
+states_tree <- gUnaryUnion(states_spdf, id = (stateProvince = province_list))
 
 
 
 # Loop through the missing_indices and use spatial index to find the state
 
-for (i in length(cities_sp)) {
+for (i in 1:length(missing_indices)) {
+  print("i")
+  print(i)
   point <- cities_sp[i, ]
+  print('point')
+  print(point)
+  print('hits')
   hits <- over(point, states_tree)
+  print(hits)
 
-  if (!is.null(hits)) {
-    test$stateProvince[missing_indices[i]] <- hits
+  if (!is.null(hits) & !is.na(hits)) {
+    test$stateProvince[missing_indices[i]] <- province_list[hits]
   }
 }
 
 print(summary(test[missing_indices,]))
+print(length(missing_indices))
+print(sum(is.na(test$stateProvince)))
 #################################################
 'Unparallelized Version'
 # missing_indices <- which(is.na(data$stateProvince) &
@@ -283,11 +291,7 @@ print(summary(test[missing_indices,]))
 #     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
 #            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
 #     select(stateProvince)
-#   # assign a new state province if and only if a single province was identified 
-#   if (nrow(region)==1){
-#     return(region$stateProvince)
-#   } else {
-#     return(NA)
+#   # assign a 
 #   }
 # }
 # 
@@ -301,32 +305,13 @@ print(summary(test[missing_indices,]))
 # }
 # # Stop the parallel
 # stopCluster(cl)
-# test$stateProvince[missing_indices] <- state_provences
+# test$stateProvince[missing_indices] <- state_provencesnew state province if and only if a single province was identified 
+#   if (nrow(region)==1){
+#     return(region$stateProvince)
+#   } else {
+#     return(NA)
 
-print(length(missing_indices))
-print(sum(is.na(test$stateProvince)))
 
-#################################################
-'OpenSpaceMaps'
-# library(httr)
-# library(osmdata)
-# 
-# osm_query <-  '
-#   area[name="Romania"]->.searchArea;
-# (
-#   way[boundary=administrative][admin_level=4](area.searchArea);
-# );
-# out body;'
-# 
-# getbb(place_name = "Romania") |> 
-#     opq() |>
-#     add_osm_feature(key = 'boundary', value = 'administrative',
-#                     value_exact = F, key_exact = F) |>
-#     osmdata_sf()
-# 
-# q <- opq(osm_query)
-# osm <- osmdata_sf(q)
-# coords <- st_coordinates(result$osm_polygons)
 
 ```
     - filter based on locality name
