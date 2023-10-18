@@ -264,52 +264,8 @@ for (i in 1:length(missing_indices)) {
 print(summary(test[missing_indices,]))
 print(length(missing_indices))
 print(sum(is.na(test$stateProvince)))
-#################################################
-'Unparallelized Version'
-# missing_indices <- which(is.na(data$stateProvince) &
-#                            !is.na(data$decimalLatitude) &
-#                            !is.na(data$decimalLongitude))
-# # test_indices = head(missing_indices)
-# 
-# for (i in missing_indices){
-#   region <- coord_by_province %>%
-#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
-#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
-#     select(stateProvince)
-#   if (length(region$stateProvince)==1){
-#     test$stateProvince[i] <- region$stateProvince
-#   }
-# }
+  test$stateProvince[i] <- region$stateProvince
 
-#################################################
-'Paralelized Version' # doesn't work...
-# cl <- makeCluster(num_cores)
-# registerDoParallel(cl)
-# 
-# filter_coordinates <- function(i){
-#   region <- coord_by_province %>%
-#     filter(test$decimalLatitude[i] >= min_lat & test$decimalLatitude[i] <= max_lat &
-#            test$decimalLongitude[i] >= min_lon & test$decimalLongitude[i] <= max_lon) %>%
-#     select(stateProvince)
-#   # assign a 
-#   }
-# }
-# 
-# missing_indices <- which(is.na(data$stateProvince) &
-#                            !is.na(data$decimalLatitude) &
-#                            !is.na(data$decimalLongitude))
-# # test_indices = head(missing_indices)
-# state_provences <- character(length(missing_indices))
-# state_provences <- foreach(i = missing_indices, .packages = c("dplyr")) %dopar% {
-#   filter_coordinates(i)
-# }
-# # Stop the parallel
-# stopCluster(cl)
-# test$stateProvince[missing_indices] <- state_provencesnew state province if and only if a single province was identified 
-#   if (nrow(region)==1){
-#     return(region$stateProvince)
-#   } else {
-#     return(NA)
 
 
 
