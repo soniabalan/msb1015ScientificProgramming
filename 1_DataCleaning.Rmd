@@ -15,6 +15,11 @@ Data Info:
     Citation:
     GBIF Occurrence Download https://doi.org/10.15468/dl.y8qsxq Accessed from R via rgbif(https://github.com/ropensci/rgbif) on 2023-09-16
 
+GBIF Query used to retreive the data (using occ_download)):
+  pred("taxonKey", 212), # aves - all bird species
+  pred("country","RO"), # Romania
+  format = "SIMPLE_CSV",
+
 ---
 
 # Setup 
@@ -29,9 +34,7 @@ Data Info:
 # install.packages("doParallel")
 # install.packages("sp")
 # install.packages("sf") # co=requisite of "rgeos", takes a long time to install
-# install.packages("rgeos") 
-# install.packages("httr")
-
+# install.packages("rgeos") # rgeos has been archived in 2023!
 
 # Libraries loading
 library(rgbif)
@@ -50,21 +53,6 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 
 # Retrieve Data from GBIF using their API
 ```{r}
-# # download occurrence data
-# occ_download(
-#   # filters applied
-#   pred("taxonKey", 212), # aves - all bird species
-#   pred("country","RO"), # Romania
-#   format = "SIMPLE_CSV",
-#   # accreditation
-#   user = "soniaa.balan",
-#   pwd = "not_a_real_password", # for safety reasons, the password is not included in this script
-#   email = "soniaa.balan@gmail.com"
-# )
-
-# # check download status - also returns Download information
-# occ_download_wait('0018307-230828120925497')
-
 # retrieve downloaded data
 data_raw<- occ_download_get('0018307-230828120925497') %>%
   occ_download_import()
@@ -227,68 +215,8 @@ print(sum(is.na(test$stateProvince)))
 data$stateProvince <- test$stateProvince
 # intermediary save
 write.csv(test, "geography_labels.csv", row.names=FALSE)
+stateProvince_labels <- read.csv("geography_labels.csv")
 
-```
-    - filter based on locality name
-```{r}
-
-###########################################################
-'The Paralelized Process'
-num_cores <- 4
-
-# Initialize a parallel
-cl <- makeCluster(num_cores)
-registerDoParallel(cl)
-
-# Create a function to identify the province where an observation was made, based on a distance metric that compares the strings of locality
-calculate_closest_city <- function(i, state_provences) {
-  distances <- stringdist(data$locality[i], cities_list$locality)
-  closest_index <- which.min(distances)
-  # the function only returns a county if the distance is very small, otherwise returns NA
-  if (distances[closest_index] < 0.5) {
-    return(cities_list$stateProvince[closest_index])
-  } else { 
-    return(NA)
-  }
-}
-
-
-# only perform the search for rows that don't already have province infromation, and that have locality information
-missing_indices <- which(is.na(data$stateProvince) & data$locality!="")
-state_provences <- character(length(missing_indices))
-
-# the paralel loop process of identifying provinces
-state_provences <- foreach(i = missing_indices, .packages = c("stringdist")) %dopar% {
-  calculate_closest_city(i)
-}
-
-# Stop the parallel
-stopCluster(cl)
-
-# add the identified province data in the dataset
-data$stateProvince[missing_indices] <- state_provences
-
-print(sum(is.na(data$stateProvince)))
-print(sum(data$stateProvince==""))
-
-
-############################################################
-'The un-parallelized version of the process'
-
-# missing_indices <- which(data$stateProvince=="" & data$locality!="")
-# state_provences <- character(length(missing_indices))
-# 
-# # time-consuming step - can still parallelize
-# for (i in missing_indices) {
-#   
-#   distances <- stringdist(data$locality[i], cities_list$locality)
-#   closest_index <- which.min(distances)
-#   if (distances[closest_index] < 0.5) {
-#     state_provences[i] <- cities_list$stateProvince[closest_index]
-#   } else {
-#     state_provences[i] <- NA 
-#   }
-# }
 ```
   Taxonomy Labels
 ```{r}
