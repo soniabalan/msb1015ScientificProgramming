@@ -26,9 +26,13 @@ library(ggplot2)
 library(dplyr)
 
 
-data_vis <- read.csv("data_filled_gaps.csv",
+data_vis <- read.csv("data_clean.csv",
                  header=TRUE,
                  stringsAsFactors=TRUE)
+
+data_vis$eventDate <- as.Date(data$eventDate, format = "%d/%m/%Y")
+
+
 ```
 
   Accounting for Count Data
@@ -55,11 +59,12 @@ process_counts <- function(df, taxon_level){
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
-ggplot(data_vis,aes(year)) +
-  geom_bar(color = "#00501B") +
-  geom_vline(xintercept = 2005,
-             linewidth = 0.5,
-             color = "black") 
+# aes(x = Start.date %>% format('%Y'))
+ggplot(data_vis,aes(x = eventDate %>% format('%Y'))) +
+  geom_bar(color = "#00501B") #+
+  # geom_vline(xintercept = 2005,
+  #            linewidth = 0.5,
+  #            color = "black") 
 ```
   More exploratory figures
 ```{r}

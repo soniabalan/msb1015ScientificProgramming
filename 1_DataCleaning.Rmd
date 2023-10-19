@@ -108,9 +108,9 @@ data = data_raw %>% select(-remove_vars)
 data <- data[-which(data$order == ""), ]
 data <- data[!is.na(data$order), ]
 
-# factorize data stored as characters
-data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
-data$month <- as.factor(data$month)
+# # factorize data stored as characters
+# data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
+# data$month <- as.factor(data$month)
 
 # replace NAs in count data by 1
 data$individualCount <- replace(data$individualCount, is.na(data$individualCount), 1)
@@ -241,7 +241,6 @@ gen <- lapply(data[data$genus=="" & !is.na(data$species),"species"], function(x)
 
 data$genus <- as.character(data$genus)
 data[which(data$genus=="" & !is.na(data$species)),"genus"] <- as.vector(gen)
-data[data$genus=="","genus"] <- NA
 data$genus <- as.factor(data$genus)
 
 # sanity checks
