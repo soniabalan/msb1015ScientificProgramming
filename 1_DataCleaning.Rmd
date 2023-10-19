@@ -126,47 +126,6 @@ for (var in colnames(data)) {
   print(summary(data[,var]))
 }
 ```
-  Taxonomy Labels
-```{r}
-
-##### Renaming verbatim scientific name levels #####
-lvl_verbatim = levels(data$verbatimScientificName)
-verbatim_sp <- lapply(lvl_verbatim, function(x) word(x, 1, 2))
-levels(data$verbatimScientificName) = unlist(verbatim_sp)
-
-# add species information from verbatimScientificName 
-data$species <- as.character(data$species)
-data[which(data$species==""),"species"] <-   as.vector(data[(data$species==""),"verbatimScientificName"])
-data$species <- as.factor(data$species)
-
-# add genus information from species
-gen <- lapply(data[data$genus=="" & !is.na(data$species),"species"], function(x) word(x, 1))
-
-data$genus <- as.character(data$genus)
-data[which(data$genus=="" & !is.na(data$species)),"genus"] <- as.vector(gen)
-data[data$genus=="","genus"] <- NA
-data$genus <- as.factor(data$genus)
-
-# sanity checks
-print(which(data$species=="")) # there shouldn't be any more empty species
-print(which(data$genus=="")) # there shouldn't be any more empty genus
-
-data = data %>% select(-c("verbatimScientificName"))
-```
-  Dates
-```{r}
-print("before")
-print(sum(is.na(data$eventDate)))
-
-
-data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
-
-# remaining NAs
-print("after")
-print(sum(is.na(data$eventDate)))
-
-# data = data %>% select(-c("dateIdentified"))
-```
   Location Data
   Using information from: city/county database from https://github.com/romania/localitati
 ```{r}
@@ -245,16 +204,15 @@ states_tree <- gUnaryUnion(states_spdf, id = (stateProvince = province_list))
 
 
 # Loop through the missing_indices and use spatial index to find the state
-
 for (i in 1:length(missing_indices)) {
-  print("i")
-  print(i)
+  # print("i")
+  # print(i)
   point <- cities_sp[i, ]
-  print('point')
-  print(point)
-  print('hits')
+  # print('point')
+  # print(point)
+  # print('hits')
   hits <- over(point, states_tree)
-  print(hits)
+  # print(hits)
 
   if (!is.null(hits) & !is.na(hits)) {
     test$stateProvince[missing_indices[i]] <- province_list[hits]
@@ -266,8 +224,9 @@ print(length(missing_indices))
 print(sum(is.na(test$stateProvince)))
   test$stateProvince[i] <- region$stateProvince
 
-
-
+data$stateProvince <- test$stateProvince
+# intermediary save
+write.csv(test, "geography_labels.csv", row.names=FALSE)
 
 ```
     - filter based on locality name
@@ -331,6 +290,48 @@ print(sum(data$stateProvince==""))
 #   }
 # }
 ```
+  Taxonomy Labels
+```{r}
+
+##### Renaming verbatim scientific name levels #####
+lvl_verbatim = levels(data$verbatimScientificName)
+verbatim_sp <- lapply(lvl_verbatim, function(x) word(x, 1, 2))
+levels(data$verbatimScientificName) = unlist(verbatim_sp)
+
+# add species information from verbatimScientificName 
+data$species <- as.character(data$species)
+data[which(data$species==""),"species"] <-   as.vector(data[(data$species==""),"verbatimScientificName"])
+data$species <- as.factor(data$species)
+
+# add genus information from species
+gen <- lapply(data[data$genus=="" & !is.na(data$species),"species"], function(x) word(x, 1))
+
+data$genus <- as.character(data$genus)
+data[which(data$genus=="" & !is.na(data$species)),"genus"] <- as.vector(gen)
+data[data$genus=="","genus"] <- NA
+data$genus <- as.factor(data$genus)
+
+# sanity checks
+print(which(data$species=="")) # there shouldn't be any more empty species
+print(which(data$genus=="")) # there shouldn't be any more empty genus
+
+data = data %>% select(-c("verbatimScientificName"))
+```
+  Dates
+```{r}
+print("before")
+print(sum(is.na(data$eventDate)))
+
+
+data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
+
+# remaining NAs
+print("after")
+print(sum(is.na(data$eventDate)))
+
+# data = data %>% select(-c("dateIdentified"))
+```
+
 # Export Processed Data
 ```{r}
 write.csv(data, "data_filled_gaps.csv", row.names=FALSE)
