@@ -20,11 +20,13 @@ Data Info:
 ```{r}
 # install.packages("ggplot2")
 # install.packages("dplyr")
+# install.packages("sf")
 # install.packages("ggmap")
 # install.packages("gridExtra")
 
 library(ggplot2)
 library(dplyr)
+library(sf)
 library(gridExtra)
 library(ggmap)
 
@@ -146,13 +148,20 @@ grid.arrange(latitude_barplot, longitude_barplot, nrow = 2)
 ```
 Map View
 ```{r}
-ro.map <- get_openstreetmap(bbox= c(left =  min(data_vis$decimalLongitude), bottom =  min(data_vis$decimalLatitude), right =  max(data_vis$decimalLongitude), top = max(data_vis$decimalLatitude)),
-                                     scale = 69885283, format = "png")
-
-ggmap(ca.map2) +
-geom_point(data = canada_map,
-           aes(x=coords.x1,y=coords.x2, size = Nb.Touristes, color = Nb.Touristes)) +
-guides(colour = guide_legend())
+# buffer = 0
+ggplot(data_vis, aes(x = decimalLongitude, y = decimalLatitude)) + 
+  geom_point(alpha = 0.01, 
+             size = 0.25) +
+  # coord_equal() +
+  xlab('Longitude') + 
+  ylab('Latitude') + 
+  stat_density2d(aes(fill = ..level..), alpha = .75,
+                 geom = "polygon", data = data_vis) +
+  scale_fill_viridis_c() +
+  # theme(legend.position = 'none') 
+  xlim(20,30) +
+  ylim(min(data_vis$decimalLatitude),max(data_vis$decimalLatitude))
+  
 
 ```
 
