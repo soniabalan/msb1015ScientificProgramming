@@ -23,12 +23,14 @@ Data Info:
 # install.packages("sf")
 # install.packages("ggmap")
 # install.packages("gridExtra")
+# install.packages("RColorBrewer")
 
 library(ggplot2)
 library(dplyr)
 library(sf)
 library(gridExtra)
 library(ggmap)
+library(RColorBrewer)
 
 # load data from file
 data_vis <- read.csv("data_clean.csv",
@@ -191,7 +193,6 @@ ggplot(data_vis,
              size = 3, fill = "white", alpha = 0.4)  
 ```
 
-
 # Changes over time
 ```{r}
 # top species ------
@@ -245,30 +246,63 @@ ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill
 
 # 
 ```{r}
-# plot all months ----
+#######
+# order per month
 ord_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "order")
+ord_per_month_top <- ord_per_month %>%
+  group_by(formatted_date) %>%
+  top_n(8, total_count) %>%
+  ungroup()
 
-ggplot(ord_per_month,
+ggplot(ord_per_month_top,
        aes(x = formatted_date,
-           y = order, 
-           fill = total_count)) +
-  geom_line() +
-  geom_point() +
-  theme(legend.position="none") +
+           y = total_count,
+           fill = order)) +
+  geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence/month by Order",
-       x = "Month")
-#  + color seasons in the background
-# 
-# species per month
-fam_per_month <- process_counts_per_feature(data_vis, eventDate %>% format('%b'), "family")
-# spp_per_month_norm # ???
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
 
-ggplot(fan_per_month, aes(month , y = total_count, color = order)) +
-  geom_line() +
-  # geom_point() +
-  # theme(legend.position="none") +
+
+###### 
+# families per month
+fam_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "family")
+fam_per_month_top <- fam_per_month %>%
+  group_by(formatted_date) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(fam_per_month_top,
+       aes(x = formatted_date,
+           y = total_count,
+           fill = family)) +
+  geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence/month by Family",
-       x = "Month")
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
+
+###### 
+# species per month
+spp_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "species")
+spp_per_month_top <- spp_per_month %>%
+  group_by(formatted_date) %>%
+  top_n(5, total_count) %>%
+  ungroup()
+
+ggplot(spp_per_month_top,
+       aes(x = formatted_date,
+           y = total_count,
+           fill = species)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence/month by Species",
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
 
 ```
 
