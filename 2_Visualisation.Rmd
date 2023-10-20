@@ -73,7 +73,7 @@ ggplot(data_vis,aes(eventDate %>% format('%Y'))) +
              linewidth = 0.5,
              color = "black")
 ```
-  More exploratory figures
+# per time
 ```{r}
 # ---------------
 data_vis <-data_vis %>%
@@ -96,7 +96,7 @@ data_vis %>%
   labs(title = paste("Occurences per Month"),
      x = "Month",
      y = "Count") +
-  scale_fill_continuous(low = "darkslategray3", high = "maroon") + 
+  # scale_fill_continuous(low = "darkslategray3", high = "maroon") + 
   scale_x_discrete(limits = c("Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))
 
 # nr of occurences/day
@@ -114,7 +114,8 @@ ggplot(data_vis, aes(eventDate %>% format('%a'))) +
      y = "Count") +
   scale_x_discrete(limits = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
 ```
-# occurences per location ------
+
+# occurences per location
 ```{r}
 # province
 prov <- data_vis %>%
@@ -146,10 +147,31 @@ longitude_barplot <- ggplot(data_vis, aes(decimalLongitude)) +
      y = "Count")
 grid.arrange(latitude_barplot, longitude_barplot, nrow = 2)
 ```
-Map View
+
+# Map View
 ```{r}
-# buffer = 0
-ggplot(data_vis, aes(x = decimalLongitude, y = decimalLatitude)) + 
+cities_list <- read.csv("orase.csv", stringsAsFactors = T)
+cities_list = cities_list %>% select(c("X",
+                                       "Y",
+                                       "NUME",
+                                       "JUDET",
+                                       "POPULATIE..in.2002."))
+
+
+# rename columns
+colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince","population")
+# find the capital of each province
+centers <-cities_list %>%
+  group_by(stateProvince) %>%
+  slice_max(population, n = 1) %>%
+  ungroup() %>%
+  filter(!grepl("Sectorul", locality)| is.na(locality))
+
+top_centers <- centers[centers$stateProvince %in% prov$stateProvince, ]
+
+ggplot(data_vis,
+       aes(x = decimalLongitude,
+           y = decimalLatitude)) + 
   geom_point(alpha = 0.01, 
              size = 0.25) +
   # coord_equal() +
@@ -160,10 +182,15 @@ ggplot(data_vis, aes(x = decimalLongitude, y = decimalLatitude)) +
   scale_fill_viridis_c() +
   # theme(legend.position = 'none') 
   xlim(20,30) +
-  ylim(min(data_vis$decimalLatitude),max(data_vis$decimalLatitude))
-  
-
+  ylim(min(data_vis$decimalLatitude),max(data_vis$decimalLatitude)) +
+  geom_text(data = top_centers, 
+            aes(x = decimalLongitude, y = decimalLatitude, label = stateProvince),
+            size = 3, color = "black") + 
+  geom_label(data = top_centers, 
+             aes(x = decimalLongitude, y = decimalLatitude, label = stateProvince),
+             size = 3, fill = "white", alpha = 0.4)  
 ```
+
 
 # Changes over time
 ```{r}
@@ -173,16 +200,25 @@ spp_top <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 11
 spp_top_sans1 <- spp_top[-1,]
 
 # most abundent birds (overall)
-ggplot(spp_top, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
+ggplot(spp_top,
+       aes(x = reorder(species, total_count),
+           y = total_count,
+           fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
+  scale_fill_continuous(low="lightgreen", high="darkblue") +
   labs(title = paste("Top Species"),
      x = "Species",
      y = "Abundance")
+
 # most abundent birds (overall), without Anser albiformis (outlier?)
-ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fill = species)) +
+ggplot(spp_top_sans1,
+       aes(x = reorder(species, total_count),
+           y = total_count,
+           fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
+  scale_fill_continuous(low="lightgreen", high="darkblue") +
   labs(title = paste("Top Species"),
      x = "Species",
      y = "Abundance")
@@ -191,33 +227,40 @@ ggplot(spp_top_sans1, aes(x = reorder(species, total_count), y = total_count, fi
 gen_total <- process_counts(data_vis, "genus")
 gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
 # most abundent birds (overall)
-ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   labs(title = paste("Top Genuses"),
      x = "Genus",
      y = "Abundance")
 # most abundent birds (overall) without waxwings
-gen_top_sans1 <- gen_top[-2,]
-ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = genus)) +
+gen_top_sans1 <- gen_top[-1,]
+ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   labs(title = paste("Top Genuses"),
      x = "Genus",
      y = "Abundance")
+```
 
+# 
+```{r}
 # plot all months ----
-ord_per_month <- process_counts_per_feature(data_vis,"month","order")
-ggplot(ord_per_month, aes(month , y = order)) +
+ord_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "order")
+
+ggplot(ord_per_month,
+       aes(x = formatted_date,
+           y = order, 
+           fill = total_count)) +
   geom_line() +
   geom_point() +
   theme(legend.position="none") +
   labs(title = "Presence/month by Order",
        x = "Month")
 #  + color seasons in the background
-
+# 
 # species per month
-fan_per_month <- process_counts_per_feature(data_vis, "month", "order")
+fam_per_month <- process_counts_per_feature(data_vis, eventDate %>% format('%b'), "family")
 # spp_per_month_norm # ???
 
 ggplot(fan_per_month, aes(month , y = total_count, color = order)) +
