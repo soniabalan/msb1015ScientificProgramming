@@ -16,7 +16,7 @@ Data Info:
     GBIF Occurrence Download https://doi.org/10.15468/dl.y8qsxq Accessed from R via rgbif(https://github.com/ropensci/rgbif) on 2023-09-16
 
 ---
-
+# Setup
 ```{r}
 # install.packages("ggplot2")
 # install.packages("dplyr")
@@ -24,6 +24,9 @@ Data Info:
 # install.packages("ggmap")
 # install.packages("gridExtra")
 # install.packages("RColorBrewer")
+install.packages("vegan")
+install.packages("abdiv")
+
 
 library(ggplot2)
 library(dplyr)
@@ -31,6 +34,8 @@ library(sf)
 library(gridExtra)
 library(ggmap)
 library(RColorBrewer)
+library(vegan)
+library(abdiv)
 
 # load data from file
 data_vis <- read.csv("data_clean.csv",
@@ -147,7 +152,7 @@ longitude_barplot <- ggplot(data_vis, aes(decimalLongitude)) +
   labs(title = paste("Occurences per Longitude"),
      x = "Longitude",
      y = "Count")
-grid.arrange(latitude_barplot, longitude_barplot, nrow = 2)
+grid.arrange(latitude_barplot, longitude_barplot, nrow = 2) 
 ```
 
 # Map View
@@ -171,6 +176,7 @@ centers <-cities_list %>%
 
 top_centers <- centers[centers$stateProvince %in% prov$stateProvince, ]
 
+# many points to plot - takes time to plot
 ggplot(data_vis,
        aes(x = decimalLongitude,
            y = decimalLatitude)) + 
@@ -190,10 +196,11 @@ ggplot(data_vis,
             size = 3, color = "black") + 
   geom_label(data = top_centers, 
              aes(x = decimalLongitude, y = decimalLatitude, label = stateProvince),
-             size = 3, fill = "white", alpha = 0.4)  
+             size = 3, fill = "white", alpha = 0.4) +
+  theme(panel.background = element_blank())  
 ```
 
-# Changes over time
+# Most dominant groups overall
 ```{r}
 # top species ------
 spp_total <- process_counts(data_vis, "species")
@@ -208,7 +215,7 @@ ggplot(spp_top,
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightgreen", high="darkblue") +
-  labs(title = paste("Top Species"),
+  labs(title = paste("Top Species Overall"),
      x = "Species",
      y = "Abundance")
 
@@ -220,7 +227,7 @@ ggplot(spp_top_sans1,
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightgreen", high="darkblue") +
-  labs(title = paste("Top Species"),
+  labs(title = paste("Top Species (without Anser)"),
      x = "Species",
      y = "Abundance")
 
@@ -231,7 +238,7 @@ gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12
 ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
-  labs(title = paste("Top Genuses"),
+  labs(title = paste("Top Genuses Overall"),
      x = "Genus",
      y = "Abundance")
 # most abundent birds (overall) without waxwings
@@ -239,12 +246,12 @@ gen_top_sans1 <- gen_top[-1,]
 ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
-  labs(title = paste("Top Genuses"),
+  labs(title = paste("Top Genuses (without waxwings)"),
      x = "Genus",
      y = "Abundance")
 ```
 
-# 
+# dominant groups per month
 ```{r}
 #######
 # order per month
@@ -259,7 +266,7 @@ ggplot(ord_per_month_top,
            y = total_count,
            fill = order)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence/month by Order",
+  labs(title = "Presence per Month by Order",
        x = "Month",
        y = "Abundance (Proportion)") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
@@ -279,7 +286,7 @@ ggplot(fam_per_month_top,
            y = total_count,
            fill = family)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence/month by Family",
+  labs(title = "Presence per Month by Family",
        x = "Month",
        y = "Abundance (Proportion)") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
@@ -298,12 +305,166 @@ ggplot(spp_per_month_top,
            y = total_count,
            fill = species)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence/month by Species",
+  labs(title = "Presence per Month by Species",
        x = "Month",
        y = "Abundance (Proportion)") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
   scale_fill_viridis_d()
 
 ```
+# dominant groups per year
+```{r}
+#######
+# order per month
+ord_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "order")
+ord_per_yr_top <- ord_per_yr %>%
+  group_by(formatted_date) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(ord_per_yr_top,
+       aes(x = formatted_date,
+           y = total_count,
+           fill = order)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Year by Order",
+       x = "Year",
+       y = "Abundance (Proportion)") +
+  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
 
 
+###### 
+# families per month
+fam_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "family")
+fam_per_yr_top <- fam_per_yr %>%
+  group_by(formatted_date) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(fam_per_yr_top,
+       aes(x = formatted_date,
+           y = total_count,
+           fill = family)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Year by Family",
+       x = "Year",
+       y = "Abundance (Proportion)") +
+  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
+
+###### 
+# species per month
+spp_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "species")
+spp_per_yr_top <- spp_per_yr %>%
+  group_by(formatted_date) %>%
+  top_n(5, total_count) %>%
+  ungroup()
+
+ggplot(spp_per_yr_top,
+       aes(x = formatted_date,
+           y = total_count,
+           fill = species)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Year by Species",
+       x = "Year",
+       y = "Abundance (Proportion)") +
+  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_fill_viridis_d()
+
+```
+# dominant groups per province
+```{r}
+#######
+# order per stateProvince
+ord_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "order")
+ord_per_prov_top <- ord_per_prov %>%
+  group_by(stateProvince) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = order)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per State Province by Order",
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+
+###### 
+# families per stateProvince
+fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
+fam_per_prov_top <- fam_per_month %>%
+  group_by(stateProvince) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = family)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Month by Family",
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+###### 
+# species per stateProvince
+spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
+spp_per_prov_top <- spp_per_prov %>%
+  group_by(stateProvince) %>%
+  top_n(5, total_count) %>%
+  ungroup()
+
+ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = species)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Month by Species",
+       x = "Month",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+```
+# Biodiversity
+```{r}
+# measuring diversity --------
+# computing 3 diversity indices for 3 different taxonomical levels
+# order
+biodiv_ord <- ord_per_prov %>%
+  group_by(stateProvince) %>%
+  summarise(
+    order_richness = n_distinct(order),
+    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
+    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+# family
+biodiv_fam <- fam_per_prov %>%
+  group_by(stateProvince) %>%
+  summarise(
+    order_richness = n_distinct(family),
+    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
+    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+# species
+biodiv_spp <- spp_per_prov %>%
+  group_by(stateProvince) %>%
+  summarise(
+    order_richness = n_distinct(species),
+    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
+    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+
+# merging the information in a dataframe together with coordinates per province
+div_per_prov <- centers %>%
+  left_join(biodiv_ord, by = "stateProvince")
+div_per_prov <- div_per_prov %>%
+  left_join(biodiv_fam, by = "stateProvince")
+div_per_prov <- div_per_prov %>%
+  left_join(biodiv_spp, by = "stateProvince")
+```
