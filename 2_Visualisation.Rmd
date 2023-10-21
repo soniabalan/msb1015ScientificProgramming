@@ -624,3 +624,7 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 Further plans -> changes in diversity per year (and month?)
 -> plot that for Tulcea, Brasov, Caras-Severin
 -> redo previous plots (with species presence with top 8 prov based on shannon index) ? 
+
+Cleanup 
+- make all variable names intuitive and nice
+- save all plots (with nice names)
