@@ -24,8 +24,8 @@ Data Info:
 # install.packages("ggmap")
 # install.packages("gridExtra")
 # install.packages("RColorBrewer")
-install.packages("vegan")
-install.packages("abdiv")
+# install.packages("vegan")
+# install.packages("abdiv")
 
 
 library(ggplot2)
@@ -48,8 +48,17 @@ column_index <- which(colnames(data_vis) == "stateProvince.stateProvince")
 colnames(data_vis)[column_index] <- "stateProvince"
 ```
 
-  Accounting for Count Data
+  Custom Functions
 ```{r}
+# getting he total number of occuernces per taxon level 
+process_counts <- function(df, taxon_level){
+  counts <- df %>%
+  group_by(.data[[taxon_level]]) %>%
+  summarise(total_count = sum(individualCount))
+  
+  return(counts)
+}
+
 # function to obtain the accurate number of counts per feature
 process_counts_per_feature <- function(df, feature, taxon_level) {
   counts <- df %>%
@@ -59,15 +68,41 @@ process_counts_per_feature <- function(df, feature, taxon_level) {
   return(counts)
 }
 
-# getting he total number of occuernces per taxon level (to be used for normalization)
-process_counts <- function(df, taxon_level){
+# function to obtain accurate number of counts per feature per timescale
+process_counts_per_feature_per_time <- function(df, timescale, feature, taxon_level) {
   counts <- df %>%
-  group_by(.data[[taxon_level]]) %>%
+  group_by(.data [[timescale]], .data[[feature]], .data[[taxon_level]]) %>%
   summarise(total_count = sum(individualCount))
   
   return(counts)
 }
- 
+
+# biodiversity 
+# the input df needs to already be formated so it is has the total counts by location and taxon level
+biodiversity_indexes <- function(df, taxon_level){ 
+  biodiv <- df %>%
+  group_by(stateProvince) %>%
+  summarise(
+    order_richness = n_distinct(.data[[taxon_level]]),
+    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
+    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+  
+  return(biodiv)
+}
+
+# yearly biodiversity 
+# the input df needs to already be formated so it is has the total counts by formatted date, location and taxon level
+biodiversity_indexes_yearly <- function(df, taxon_level){ 
+  biodiv <- df %>%
+    group_by(formatted_date, stateProvince) %>%
+    summarise(
+      order_richness = n_distinct(.data[[taxon_level]]),
+      simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
+      shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+  
+  return(biodiv)
+}
+
 ```
 # Diagnostics Plots -------------------------------
   Cutoff Decision
@@ -124,7 +159,7 @@ ggplot(data_vis, aes(eventDate %>% format('%a'))) +
 
 # occurences per location
 ```{r}
-# province
+# province -----
 prov <- data_vis %>%
   group_by(stateProvince) %>%
   summarize(n = n()) %>%
@@ -398,7 +433,7 @@ ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov$stateProvince, 
 ###### 
 # families per stateProvince
 fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
-fam_per_prov_top <- fam_per_month %>%
+fam_per_prov_top <- fam_per_prov%>%
   group_by(stateProvince) %>%
   top_n(8, total_count) %>%
   ungroup()
@@ -439,26 +474,13 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, 
 # measuring diversity --------
 # computing 3 diversity indices for 3 different taxonomical levels
 # order
-biodiv_ord <- ord_per_prov %>%
-  group_by(stateProvince) %>%
-  summarise(
-    order_richness = n_distinct(order),
-    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
-    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+
+
+biodiv_ord <- biodiversity_indexes(ord_per_prov, "order") 
 # family
-biodiv_fam <- fam_per_prov %>%
-  group_by(stateProvince) %>%
-  summarise(
-    family_richness = n_distinct(family),
-    simpson_index_fam = diversity(data.frame(obs = total_count), index = "simpson"),
-    shannon_wiener_index_fam = diversity(data.frame(obs = total_count), index = "shannon"))
+biodiv_fam <- biodiversity_indexes(fam_per_prov, "family") 
 # species
-biodiv_spp <- spp_per_prov %>%
-  group_by(stateProvince) %>%
-  summarise(
-    species_richness = n_distinct(species),
-    simpson_index_spp = diversity(data.frame(obs = total_count), index = "simpson"),
-    shannon_wiener_index_spp = diversity(data.frame(obs = total_count), index = "shannon"))
+biodiv_spp <- biodiversity_indexes(spp_per_prov, "species")
 
 # merging the information in a dataframe together with coordinates per province
 div_per_prov <- centers %>%
@@ -624,7 +646,36 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 Further plans -> changes in diversity per year (and month?)
 -> plot that for Tulcea, Brasov, Caras-Severin
 -> redo previous plots (with species presence with top 8 prov based on shannon index) ? 
+# Yearly change in biodiversity
+```{r}
+# measuring diversity --------
+# ORDER
+ord_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")),"formatted_date", "stateProvince", "order")
 
+biodiv_yearly_order <- biodiversity_indexes_yearly(ord_per_year_per_prov,"order")
+
+# FAMILU
+fam_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "stateProvince", "family")
+
+biodiv_yearly_family <- biodiversity_indexes_yearly(fam_per_year_per_prov,"family")
+
+
+# SPECIES
+spp_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "stateProvince", "species")
+
+biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"species")
+
+
+
+
+# merging the information in a dataframe together with coordinates per province
+div_per_prov <- centers %>%
+  left_join(biodiv_ord, by = "stateProvince")
+div_per_prov <- div_per_prov %>%
+  left_join(biodiv_fam, by = "stateProvince")
+div_per_prov <- div_per_prov %>%
+  left_join(biodiv_spp, by = "stateProvince")
+```
 Cleanup 
 - make all variable names intuitive and nice
 - save all plots (with nice names)
