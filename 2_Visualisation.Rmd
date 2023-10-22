@@ -83,9 +83,9 @@ biodiversity_indexes <- function(df, taxon_level){
   biodiv <- df %>%
   group_by(stateProvince) %>%
   summarise(
-    order_richness = n_distinct(.data[[taxon_level]]),
-    simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
-    shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+    richness_index = n_distinct(.data[[taxon_level]]),
+    simpson_index = diversity(data.frame(obs = total_count), index = "simpson"),
+    shannon_wiener_index = diversity(data.frame(obs = total_count), index = "shannon"))
   
   return(biodiv)
 }
@@ -96,9 +96,9 @@ biodiversity_indexes_yearly <- function(df, taxon_level){
   biodiv <- df %>%
     group_by(formatted_date, stateProvince) %>%
     summarise(
-      order_richness = n_distinct(.data[[taxon_level]]),
-      simpson_index_ord = diversity(data.frame(obs = total_count), index = "simpson"),
-      shannon_wiener_index_ord = diversity(data.frame(obs = total_count), index = "shannon"))
+      richness_index = n_distinct(.data[[taxon_level]]),
+      simpson_index = diversity(data.frame(obs = total_count), index = "simpson"),
+      shannon_wiener_index = diversity(data.frame(obs = total_count), index = "shannon"))
   
   return(biodiv)
 }
@@ -497,8 +497,8 @@ div_per_prov <- div_per_prov %>%
 
 'Species Richness'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = order_richness, 
-                 color = order_richness)) +  # Use size for shannon_index values
+  geom_point(aes(size = richness_index.x, 
+                 color = richness_index.x)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Order Richness", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -513,8 +513,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SIMPSON INDEX'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = simpson_index_ord, 
-                 color = simpson_index_ord)) +  # Use size for shannon_index values
+  geom_point(aes(size = simpson_index.x, 
+                 color = simpson_index.x)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Simpson Diversity Index (Order)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -529,8 +529,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SHANON-WIENER INDEX '
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = shannon_wiener_index_ord, 
-                 color = shannon_wiener_index_ord)) +  # Use size for shannon_index values
+  geom_point(aes(size = shannon_wiener_index.x, 
+                 color = shannon_wiener_index.x)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Shannon-Wiener Index (Order)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -547,8 +547,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 # FAMILY --------
 'Species Richness'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = family_richness, 
-                 color = family_richness)) +  # Use size for shannon_index values
+  geom_point(aes(size = richness_index.y, 
+                 color = richness_index.y)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Family Richness", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -563,8 +563,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SIMPSON INDEX'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = simpson_index_fam, 
-                 color = simpson_index_fam)) +  # Use size for shannon_index values
+  geom_point(aes(size = simpson_index.y, 
+                 color = simpson_index.y)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Simpson Diversity Index (Family)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -579,8 +579,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SHANON-WIENER INDEX '
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = shannon_wiener_index_fam, 
-                 color = shannon_wiener_index_fam)) +  # Use size for shannon_index values
+  geom_point(aes(size = shannon_wiener_index.y, 
+                 color = shannon_wiener_index.y)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Shannon-Wiener Index (Family)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -597,8 +597,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 # SPECIES --------
 'Species Richness'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = species_richness, 
-                 color = species_richness)) +  # Use size for shannon_index values
+  geom_point(aes(size = richness_index, 
+                 color = richness_index)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Species Richness", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -613,8 +613,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SIMPSON INDEX'
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = simpson_index_spp, 
-                 color = simpson_index_spp)) +  # Use size for shannon_index values
+  geom_point(aes(size = simpson_index, 
+                 color = simpson_index)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Simpson Diversity Index (Species)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -629,8 +629,8 @@ ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
 
 'SHANON-WIENER INDEX '
 ggplot(data = div_per_prov, aes(x = decimalLongitude, y = decimalLatitude)) +
-  geom_point(aes(size = shannon_wiener_index_spp, 
-                 color = shannon_wiener_index_spp)) +  # Use size for shannon_index values
+  geom_point(aes(size = shannon_wiener_index, 
+                 color = shannon_wiener_index)) +  # Use size for shannon_index values
   # If you want to use fill instead of size, you can use aes(fill = shannon_index)
   labs(title = "Shannon-Wiener Index (Species)", x = "Decimal Longitude", y = "Decimal Latitude") +
   geom_text(aes(x = decimalLongitude,
@@ -664,18 +664,20 @@ biodiv_yearly_family <- biodiversity_indexes_yearly(fam_per_year_per_prov,"famil
 spp_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "stateProvince", "species")
 
 biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"species")
-
-
-
-
-# merging the information in a dataframe together with coordinates per province
-div_per_prov <- centers %>%
-  left_join(biodiv_ord, by = "stateProvince")
-div_per_prov <- div_per_prov %>%
-  left_join(biodiv_fam, by = "stateProvince")
-div_per_prov <- div_per_prov %>%
-  left_join(biodiv_spp, by = "stateProvince")
 ```
+# yearly biodiversity visualization
+```{r}
+ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index)) +
+  geom_violin(aes(fill = factor(formatted_date)), scale = "width", width = 0.8) +
+  labs(title = "Richness Index Over Time",
+       x = "Year",
+       y = "Richness Index") +
+  # theme_minimal() +
+  theme(legend.position = "none") +
+  facet_wrap(~stateProvince)
+
+```
+
 Cleanup 
 - make all variable names intuitive and nice
 - save all plots (with nice names)
