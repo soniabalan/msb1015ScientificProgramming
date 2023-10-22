@@ -245,8 +245,8 @@ spp_top_sans1 <- spp_top[-1,]
 # most abundent birds (overall)
 ggplot(spp_top,
        aes(x = reorder(species, total_count),
-           y = total_count,
-           fill = total_count)) +
+           y = total_count/sum(total_count),
+           fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightgreen", high="darkblue") +
@@ -257,12 +257,12 @@ ggplot(spp_top,
 # most abundent birds (overall), without Anser albiformis (outlier?)
 ggplot(spp_top_sans1,
        aes(x = reorder(species, total_count),
-           y = total_count,
-           fill = total_count)) +
+           y = total_count/sum(total_count),
+           fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightgreen", high="darkblue") +
-  labs(title = paste("Top Species (without Anser)"),
+  labs(title = paste("Top Species (without Anser albiformis)"),
      x = "Species",
      y = "Abundance")
 
@@ -270,7 +270,9 @@ ggplot(spp_top_sans1,
 gen_total <- process_counts(data_vis, "genus")
 gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
 # most abundent birds (overall)
-ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
+ggplot(gen_top, aes(x = reorder(genus, total_count),
+                    y = total_count/sum(total_count),
+                    fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   labs(title = paste("Top Genuses Overall"),
@@ -278,10 +280,12 @@ ggplot(gen_top, aes(x = reorder(genus, total_count), y = total_count, fill = tot
      y = "Abundance")
 # most abundent birds (overall) without waxwings
 gen_top_sans1 <- gen_top[-1,]
-ggplot(gen_top_sans1, aes(x = reorder(genus, total_count), y = total_count, fill = total_count)) +
+ggplot(gen_top_sans1, aes(x = reorder(genus, total_count),
+                          y = total_count/sum(total_count),
+                          fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
-  labs(title = paste("Top Genuses (without waxwings)"),
+  labs(title = paste("Top Genuses (without ducks)"),
      x = "Genus",
      y = "Abundance")
 ```
@@ -667,17 +671,103 @@ biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"spec
 ```
 # yearly biodiversity visualization
 ```{r}
+# richness index -----
+# Order level
 ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index)) +
-  geom_violin(aes(fill = factor(formatted_date)), scale = "width", width = 0.8) +
-  labs(title = "Richness Index Over Time",
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "goldenrod1",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Richness Index Over Time (Order level)",
        x = "Year",
-       y = "Richness Index") +
-  # theme_minimal() +
-  theme(legend.position = "none") +
-  facet_wrap(~stateProvince)
+       y = "Richness Index") 
 
+# Family level
+ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = richness_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "turquoise4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Richness Index Over Time (Family level)",
+       x = "Year",
+       y = "Richness Index") 
+
+ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "slateblue4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Richness Index Over Time (Species level)",
+       x = "Year",
+       y = "Richness Index") 
+
+# simpson index ----
+ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "goldenrod1",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Simpson Index Over Time (Order level)",
+       x = "Year",
+       y = "Simpson Index") 
+
+ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "turquoise4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Simpson Index Over Time (Family level)",
+       x = "Year",
+       y = "Simpson Index") 
+
+ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "slateblue4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Simpson Index Over Time (Species level)",
+       x = "Year",
+       y = "Simpson Index") 
+
+# shannon-wiener index ----
+ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "goldenrod1",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Sihannon-Wiener Index Over Time (Order level)",
+       x = "Year",
+       y = "Shannon-Wiener Index") 
+
+ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "turquoise4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Sihannon-Wiener Index Over Time (Family level)",
+       x = "Year",
+       y = "Shannon-Wiener Index") 
+
+ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+  geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
+               fill = "slateblue4",
+               scale = "width",
+               width = 0.8) +
+  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
+  labs(title = "Sihannon-Wiener Index Over Time (Species level)",
+       x = "Year",
+       y = "Shannon-Wiener Index") 
 ```
 
+Correlation between diversity score and observation of a particular species
 Cleanup 
 - make all variable names intuitive and nice
 - save all plots (with nice names)
