@@ -517,6 +517,83 @@ ggplot(data = div_per_prov,
 
 ```
 
+Correlation between diversity score and nr of observations - verify robustness
+```{r}
+# counts ----
+# counts vs. richness index
+ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "total counts",
+       y = "richness index")
+
+# counts vs. simpson index
+ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "total counts",
+       y = "simpson index")
+
+# counts vs. shannon-wiener
+ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "total counts",
+       y = "shannon-wiener index")
+
+# log counts -----
+# counts vs. richness index
+ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "total counts",
+       y = "richness index")
+
+# counts vs. simpson index
+ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "total counts",
+       y = "simpson index")
+
+# counts vs. shannon-wiener
+ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "total counts",
+       y = "shannon-wiener index")
+```
+
 # Yearly change in biodiversity
 ```{r}
 # measuring diversity --------
@@ -797,79 +874,4 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_to
 
 ```
 
-Correlation between diversity score and nr of observations - verify robustness
-```{r}
-# counts ----
-# counts vs. richness index
-ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
-  geom_point() +  
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 10) + 
-  labs(title = "Correlation between Total Counts and Species Richness",
-       x = "total counts",
-       y = "richness index")
 
-# counts vs. simpson index
-ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 0.03) +
-  labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "total counts",
-       y = "simpson index")
-
-# counts vs. shannon-wiener
-ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 0.1) +
-  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "total counts",
-       y = "shannon-wiener index")
-
-# log counts -----
-# counts vs. richness index
-ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
-  geom_point() +  
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 10) + 
-  labs(title = "Correlation between Total Counts and Species Richness",
-       x = "total counts",
-       y = "richness index")
-
-# counts vs. simpson index
-ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 0.03) +
-  labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "total counts",
-       y = "simpson index")
-
-# counts vs. shannon-wiener
-ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 0.1) +
-  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "total counts",
-       y = "shannon-wiener index")
-```
