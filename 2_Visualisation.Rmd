@@ -634,7 +634,8 @@ ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener
        x = "Year",
        y = "Shannon-Wiener Index") 
 ```
-
+# TAXON GROUP DISTRIBUTIONS 
+ Based on Total Observation Counts
 # dominant groups per month
 ```{r}
 #######
@@ -818,8 +819,111 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, 
   # theme(legend.position="none")
 
 ```
+  Based on top diversity
+```{r}
+# top province -----
+prov_biodiversity <- biodiv_spp
+
+n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
+  group_by(stateProvince) %>%
+  summarize(n = n())
+
+prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
+# sorted_df <- df[order(-df$`_index`), ]
+prov_biodiversity <- prov_biodiversity[order(prov_biodiversity$shannon_wiener_index, decreasing = T), ]
+
+prov_biodiversity_top <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ][1:10, ]
+
+
+# color_scale <- scale_fill_gradient(low = "lightblue", high = "darkblue")
+count_biodiv_top_prov_barplot <- ggplot(prov_biodiversity_top,
+                                        aes(x = reorder(stateProvince,n),
+                                            y = n, 
+                                            fill = n)) +
+  geom_bar(stat = "identity") +
+  # coord_polar("y", start=0) + 
+  scale_fill_continuous(low="lightgreen", high="darkblue") +
+  labs(title = paste("Occurences per County - by Simpson Index"),
+     x = "County",
+     y = "Count")
+
+shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top, 
+                                          aes(x = reorder(stateProvince,shannon_wiener_index),
+                                              y = shannon_wiener_index,
+                                              fill = shannon_wiener_index)) +
+  geom_bar(stat = "identity") +
+  # coord_polar("y", start=0) + 
+  scale_fill_continuous(low="lightgreen", high="darkblue") +
+  labs(title = paste("Occurences per County - by Simpson Index"),
+     x = "County",
+     y = "Count")
+
+grid.arrange(count_biodiv_top_prov_barplot, shannon_wiener_top_prov_barplot, nrow = 2) 
+```
+# dominant groups per province
+```{r}
+# order per stateProvince -----
+ord_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "order")
+ord_per_prov_top <- ord_per_prov %>%
+  group_by(stateProvince) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = order)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Province by Order",
+       x = "Province",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+
+# families per stateProvince -----
+fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
+fam_per_prov_top <- fam_per_prov%>%
+  group_by(stateProvince) %>%
+  top_n(8, total_count) %>%
+  ungroup()
+
+ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = family)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Province by Family",
+       x = "Province",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+# species per stateProvince -----
+spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
+spp_per_prov_top <- spp_per_prov %>%
+  group_by(stateProvince) %>%
+  top_n(5, total_count) %>%
+  ungroup()
+
+ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+       aes(x = stateProvince,
+           y = total_count,
+           fill = species)) +
+  geom_bar(position = position_fill(), stat = "identity") +
+  labs(title = "Presence per Province by Species",
+       x = "Province",
+       y = "Abundance (Proportion)") +
+  scale_fill_viridis_d() #+
+  # theme(legend.position="none")
+
+```
+
 Correlation between diversity score and nr of observations - verify robustness
-Redo figs by shannon_index, instead of counts of birds
+```{r}
+
+```
+
 
 Cleanup 
 - make all variable names intuitive and nice
