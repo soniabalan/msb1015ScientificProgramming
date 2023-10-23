@@ -259,6 +259,7 @@ div_per_prov <- div_per_prov %>%
 div_per_prov <- div_per_prov %>%
   left_join(biodiv_spp, by = "stateProvince")
 ```
+
 # Biodiversity Visualisations
 ```{R}
 img <- readJPEG("map_of_romania.jpg")
@@ -515,9 +516,7 @@ ggplot(data = div_per_prov,
 
 
 ```
-Further plans -> changes in diversity per year (and month?)
--> plot that for Tulcea, Brasov, Caras-Severin
--> redo previous plots (with species presence with top 8 prov based on shannon index) ? 
+
 # Yearly change in biodiversity
 ```{r}
 # measuring diversity --------
@@ -537,6 +536,7 @@ spp_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate
 
 biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"species")
 ```
+
 # yearly biodiversity visualization
 ```{r}
 # richness index -----
@@ -634,131 +634,8 @@ ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener
        x = "Year",
        y = "Shannon-Wiener Index") 
 ```
-# TAXON GROUP DISTRIBUTIONS 
- Based on Total Observation Counts
-# dominant groups per month
-```{r}
-#######
-# order per month
-ord_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "order")
-ord_per_month_top <- ord_per_month %>%
-  group_by(formatted_date) %>%
-  top_n(8, total_count) %>%
-  ungroup()
 
-ggplot(ord_per_month_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = order)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Month by Order",
-       x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-
-###### 
-# families per month
-fam_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "family")
-fam_per_month_top <- fam_per_month %>%
-  group_by(formatted_date) %>%
-  top_n(8, total_count) %>%
-  ungroup()
-
-ggplot(fam_per_month_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = family)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Month by Family",
-       x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-###### 
-# species per month
-spp_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "species")
-spp_per_month_top <- spp_per_month %>%
-  group_by(formatted_date) %>%
-  top_n(5, total_count) %>%
-  ungroup()
-
-ggplot(spp_per_month_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = species)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Month by Species",
-       x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-```
-# dominant groups per year
-```{r}
-#######
-# order per month
-ord_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "order")
-ord_per_yr_top <- ord_per_yr %>%
-  group_by(formatted_date) %>%
-  top_n(8, total_count) %>%
-  ungroup()
-
-ggplot(ord_per_yr_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = order)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Year by Order",
-       x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-
-###### 
-# families per month
-fam_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "family")
-fam_per_yr_top <- fam_per_yr %>%
-  group_by(formatted_date) %>%
-  top_n(8, total_count) %>%
-  ungroup()
-
-ggplot(fam_per_yr_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = family)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Year by Family",
-       x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-###### 
-# species per month
-spp_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "species")
-spp_per_yr_top <- spp_per_yr %>%
-  group_by(formatted_date) %>%
-  top_n(5, total_count) %>%
-  ungroup()
-
-ggplot(spp_per_yr_top,
-       aes(x = formatted_date,
-           y = total_count,
-           fill = species)) +
-  geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Year by Species",
-       x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
-```
-# dominant groups per province
+# dominant groups per province - based on counts
 ```{r}
 #######
 # order per stateProvince
@@ -819,6 +696,7 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, 
   # theme(legend.position="none")
 
 ```
+
   Based on top diversity
 ```{r}
 # top province -----
@@ -829,10 +707,10 @@ n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
   summarize(n = n())
 
 prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
-# sorted_df <- df[order(-df$`_index`), ]
+prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
 prov_biodiversity <- prov_biodiversity[order(prov_biodiversity$shannon_wiener_index, decreasing = T), ]
 
-prov_biodiversity_top <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ][1:10, ]
+prov_biodiversity_top <- prov_biodiversity[1:10, ]
 
 
 # color_scale <- scale_fill_gradient(low = "lightblue", high = "darkblue")
@@ -921,10 +799,77 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_to
 
 Correlation between diversity score and nr of observations - verify robustness
 ```{r}
+# counts ----
+# counts vs. richness index
+ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "total counts",
+       y = "richness index")
 
+# counts vs. simpson index
+ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "total counts",
+       y = "simpson index")
+
+# counts vs. shannon-wiener
+ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "total counts",
+       y = "shannon-wiener index")
+
+# log counts -----
+# counts vs. richness index
+ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "total counts",
+       y = "richness index")
+
+# counts vs. simpson index
+ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "total counts",
+       y = "simpson index")
+
+# counts vs. shannon-wiener
+ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "total counts",
+       y = "shannon-wiener index")
 ```
-
-
-Cleanup 
-- make all variable names intuitive and nice
-- save all plots (with nice names)
