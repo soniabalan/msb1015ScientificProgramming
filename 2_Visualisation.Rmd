@@ -643,6 +643,14 @@ ggplot(data = div_per_prov,
 
 Correlation between diversity score and nr of observations - verify robustness
 ```{r}
+prov_biodiversity <- biodiv_spp
+
+n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
+  group_by(stateProvince) %>%
+  summarize(n = n())
+
+prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
+prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
 # counts ----
 # counts vs. richness index
 ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
@@ -898,14 +906,6 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, 
   Based on top diversity
 ```{r}
 # top province -----
-prov_biodiversity <- biodiv_spp
-
-n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
-  group_by(stateProvince) %>%
-  summarize(n = n())
-
-prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
-prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
 prov_biodiversity <- prov_biodiversity[order(prov_biodiversity$shannon_wiener_index, decreasing = T), ]
 
 prov_biodiversity_top <- prov_biodiversity[1:10, ]
