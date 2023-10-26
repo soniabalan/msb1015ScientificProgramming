@@ -36,7 +36,7 @@ library(gridExtra)
 library(ggmap)
 library(RColorBrewer)
 library(vegan)
-# library(abdiv)
+library(rstudioapi)
 library(jpeg)
 
 # load custom functions
@@ -51,6 +51,8 @@ data_vis$eventDate <- as.Date(data_vis$eventDate)
 'HOTFIX'
 column_index <- which(colnames(data_vis) == "stateProvince.stateProvince")
 colnames(data_vis)[column_index] <- "stateProvince"
+
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```
 # Diagnostics Plots -------------------------------
   Cutoff Decision
@@ -67,7 +69,9 @@ occurrences_per_year_complete <- ggplot(data_vis,aes(eventDate %>% format('%Y'))
        x = "Occurrences (Count)",
        y = "Year")
 
-# observations_per_year_complete
+# occurrences_per_year_complete
+ggsave( "Figures/occurrences_per_year_complete",
+  plot = last_plot())
 ```
 
 # per time
@@ -217,29 +221,38 @@ centers <-cities_list %>%
 top_centers <- centers[centers$stateProvince %in% prov$stateProvince, ]
 
 # many points to plot - takes time to plot
-ggplot(data_vis,
+occurrences_map <- ggplot(data_vis,
        aes(x = decimalLongitude,
            y = decimalLatitude)) + 
   geom_point(alpha = 0.01, 
              size = 0.25) +
   labs(title = "Density of Observations",
        x = "Longitude",
-       y = "Latitude")
+       y = "Latitude") +
   # xlab('Longitude') + 
   # ylab('Latitude') + 
-  stat_density2d(aes(fill = ..level..), alpha = .75,
-                 geom = "polygon", data = data_vis) +
+  stat_density2d(data = data_vis, aes(fill = ..level..),
+                 alpha = .75,
+                 geom = "polygon") +
   scale_fill_viridis_c() +
-  theme(legend.position = 'none')
+  theme(legend.position = 'none') +
   xlim(20,30) +
-  ylim(min(data_vis$decimalLatitude),max(data_vis$decimalLatitude)) +
+  ylim(min(data_vis$decimalLatitude), max(data_vis$decimalLatitude)) +
   geom_text(data = top_centers, 
             aes(x = decimalLongitude, y = decimalLatitude, label = stateProvince),
-            size = 3, color = "black") + 
+            size = 3,
+            color = "black", 
+            nudge_x = 0.25,
+            nudge_y = 0.25) + 
   geom_label(data = top_centers, 
              aes(x = decimalLongitude, y = decimalLatitude, label = stateProvince),
-             size = 3, fill = "white", alpha = 0.4) +
+             size = 3, fill = "white",
+             nudge_x = 0.25,
+             nudge_y = 0.25, 
+             alpha = 0.4) +
   theme(panel.background = element_blank())  
+
+occurrences_map
 ```
 
 # Most dominant groups overall
@@ -250,51 +263,73 @@ spp_top <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 11
 spp_top_sans1 <- spp_top[-1,]
 
 # most abundent birds (overall)
-ggplot(spp_top,
+species_abundence_top <- ggplot(spp_top,
        aes(x = reorder(species, total_count),
            y = total_count/sum(total_count),
            fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
-  scale_fill_continuous(low="lightgreen", high="darkblue") +
-  labs(title = paste("Top Species Overall"),
+  scale_fill_continuous(low="lightpink1", high="lightpink4") +
+  # geom_text(aes(label=species),
+  #           size=3,
+  #           position = position_stack(vjust = 0)) +
+  labs(title = "Top Species Overall",
      x = "Species",
-     y = "Abundance")
+     y = NULL,
+     fill = "Abundance") +
+  theme(panel.background = element_rect(fill = "transparent"))
+
+# species_abundence_top
 
 # most abundent birds (overall), without Anser albiformis (outlier?)
-ggplot(spp_top_sans1,
+species_abundance_no_albiformis <- ggplot(spp_top_sans1,
        aes(x = reorder(species, total_count),
            y = total_count/sum(total_count),
            fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
-  scale_fill_continuous(low="lightgreen", high="darkblue") +
-  labs(title = paste("Top Species (without Anser albiformis)"),
+  scale_fill_continuous(low="lightpink1", high="lightpink4") +
+  # geom_text(aes(label=species),
+  #           size=3,
+  #           position = position_stack(vjust = 0)) +
+  labs(title = "Top Genus (without Anser albiformis)",
      x = "Species",
-     y = "Abundance")
+     y = NULL,
+     fill = "Abundance") +
+  theme(panel.background = element_rect(fill = "transparent"))
+# species_abundance_no_albiformis
 
 # top genus --------
 gen_total <- process_counts(data_vis, "genus")
 gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
 # most abundent birds (overall)
-ggplot(gen_top, aes(x = reorder(genus, total_count),
+genus_abundance_top <- ggplot(gen_top, aes(x = reorder(genus, total_count),
                     y = total_count/sum(total_count),
                     fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
-  coord_polar("y", start=0) +
+  coord_polar("y", start= 0) +
+  scale_fill_continuous(low="lightpink1", high="lightpink4") +
   labs(title = paste("Top Genuses Overall"),
      x = "Genus",
-     y = "Abundance")
+     y = NULL,
+     fill = "Abundance") +
+  theme(panel.background = element_rect(fill = "transparent"))
+# genus_abundance_top
+
 # most abundent birds (overall) without waxwings
 gen_top_sans1 <- gen_top[-1,]
-ggplot(gen_top_sans1, aes(x = reorder(genus, total_count),
+genus_abundance_no_anser <- ggplot(gen_top_sans1, aes(x = reorder(genus, total_count),
                           y = total_count/sum(total_count),
                           fill = total_count/sum(total_count))) +
   geom_bar(stat = "identity") +
-  coord_polar("y", start=0) +
-  labs(title = paste("Top Genuses (without ducks)"),
+  coord_polar("y", start= 0) +
+  scale_fill_continuous(low="lightpink1", high="lightpink4") +
+  labs(title = paste("Top Genuses (without geese)"),
      x = "Genus",
-     y = "Abundance")
+     y = NULL,
+     fill = "Abundance") +
+  theme(panel.background = element_rect(fill = "transparent"))
+# genus_abundance_no_anser
 ```
 
 # dominant groups per month
@@ -307,17 +342,17 @@ ord_per_month_top <- ord_per_month %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(ord_per_month_top,
+order_per_month_plot <- ggplot(ord_per_month_top,
        aes(x = formatted_date,
            y = total_count,
            fill = order)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Month by Order",
        x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
+       y = "Abundance (Proportion)",
+       fill = "Order") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+# order_per_month_plot
 
 ###### 
 # families per month
@@ -327,16 +362,16 @@ fam_per_month_top <- fam_per_month %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(fam_per_month_top,
+family_per_month_plot <- ggplot(fam_per_month_top,
        aes(x = formatted_date,
            y = total_count,
            fill = family)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Month by Family",
        x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
+       y = "Abundance (Proportion)",
+       fill = "Family") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
 
 ###### 
 # species per month
@@ -346,16 +381,17 @@ spp_per_month_top <- spp_per_month %>%
   top_n(5, total_count) %>%
   ungroup()
 
-ggplot(spp_per_month_top,
+species_per_month_plot <- ggplot(spp_per_month_top,
        aes(x = formatted_date,
            y = total_count,
            fill = species)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Month by Species",
        x = "Month",
-       y = "Abundance (Proportion)") +
-  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
+       y = "Abundance (Proportion)", 
+       fill = "Species") +
+  scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+# species_per_month_plot
 
 ```
 
@@ -369,17 +405,16 @@ ord_per_yr_top <- ord_per_yr %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(ord_per_yr_top,
+order_per_year_plot <- ggplot(ord_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
            fill = order)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Year by Order",
        x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
+       y = "Abundance (Proportion)",
+       fill = "Order") 
+# order_per_year_plot
 
 ###### 
 # families per month
@@ -389,16 +424,16 @@ fam_per_yr_top <- fam_per_yr %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(fam_per_yr_top,
+family_per_year_plot <- ggplot(fam_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
            fill = family)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Year by Family",
        x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
+       y = "Abundance (Proportion)",
+       fill = "Family") 
+# family_per_year_plot
 
 ###### 
 # species per month
@@ -408,17 +443,16 @@ spp_per_yr_top <- spp_per_yr %>%
   top_n(5, total_count) %>%
   ungroup()
 
-ggplot(spp_per_yr_top,
+species_per_year_plot <- ggplot(spp_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
            fill = species)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Year by Species",
        x = "Year",
-       y = "Abundance (Proportion)") +
-  # scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
-  scale_fill_viridis_d()
-
+       y = "Abundance (Proportion)",
+       fill = "Species") 
+# species_per_year_plot
 ```
 
 # Biodiversity
@@ -446,13 +480,13 @@ div_per_prov <- div_per_prov %>%
 ```
 
 # Biodiversity Visualisations
-```{R}
+```{r}
 img <- readJPEG("map_of_romania.jpg")
 
 # ORDER --------
 
 'Species Richness'
-ggplot(data = div_per_prov, 
+map_order_richness_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -463,7 +497,9 @@ ggplot(data = div_per_prov,
                  color = richness_index.x)) +  
   labs(title = "Order Richness",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",
+       size = "Richness Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -479,7 +515,7 @@ ggplot(data = div_per_prov,
   theme(panel.background = element_blank())  
 
 'SIMPSON INDEX'
-ggplot(data = div_per_prov, 
+map_order_simpson_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -490,7 +526,9 @@ ggplot(data = div_per_prov,
                  color = simpson_index.x)) + 
   labs(title = "Simpson Diversity Index (Order)",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "Simpson Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -506,7 +544,7 @@ ggplot(data = div_per_prov,
   theme(panel.background = element_blank())  
 
 'SHANON-WIENER INDEX '
-ggplot(data = div_per_prov, 
+map_order_shannon_wiener_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -517,7 +555,9 @@ ggplot(data = div_per_prov,
                  color = shannon_wiener_index.x)) +  
   labs(title = "Shannon-Wiener Index (Order)",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "S-W Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -535,7 +575,7 @@ ggplot(data = div_per_prov,
 
 # FAMILY --------
 'Species Richness'
-ggplot(data = div_per_prov, 
+map_family_richness_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -546,7 +586,9 @@ ggplot(data = div_per_prov,
                  color = richness_index.y)) +  
   labs(title = "Family Richness",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "Richness Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -562,7 +604,7 @@ ggplot(data = div_per_prov,
   theme(panel.background = element_blank())  
 
 'SIMPSON INDEX'
-ggplot(data = div_per_prov,
+map_family_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -573,7 +615,9 @@ ggplot(data = div_per_prov,
                  color = simpson_index.y)) +  
   labs(title = "Simpson Diversity Index (Family)", 
        x = "Decimal Longitude", 
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "Simpson Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -589,7 +633,7 @@ ggplot(data = div_per_prov,
   theme(panel.background = element_blank())  
 
 'SHANON-WIENER INDEX '
-ggplot(data = div_per_prov,
+map_family_shannon_wiener_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -600,7 +644,9 @@ ggplot(data = div_per_prov,
                  color = shannon_wiener_index.y)) + 
   labs(title = "Shannon-Wiener Index (Family)", 
        x = "Decimal Longitude", 
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "S-W Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -618,7 +664,7 @@ ggplot(data = div_per_prov,
 'SPECIES'
 # SPECIES --------
 'Species Richness'
-ggplot(data = div_per_prov,
+map_species_richness_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -629,7 +675,9 @@ ggplot(data = div_per_prov,
                  color = richness_index)) +  
   labs(title = "Species Richness",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "Richness Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -645,7 +693,7 @@ ggplot(data = div_per_prov,
   theme(panel.background = element_blank())  
 
 'SIMPSON INDEX'
-ggplot(data = div_per_prov,
+map_species_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -656,7 +704,9 @@ ggplot(data = div_per_prov,
                  color = simpson_index)) +  
   labs(title = "Simpson Diversity Index (Species)",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "Simpson Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -673,7 +723,7 @@ ggplot(data = div_per_prov,
 
 'SHANON-WIENER INDEX '
 
-ggplot(data = div_per_prov,
+map_species_shannon_wiener_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) + 
   annotation_raster(img,
                     xmin = min(div_per_prov$decimalLongitude)-1.25,
@@ -684,7 +734,9 @@ ggplot(data = div_per_prov,
                  color = shannon_wiener_index)) + 
   labs(title = "Shannon-Wiener Index (Species)",
        x = "Decimal Longitude",
-       y = "Decimal Latitude") +
+       y = "Decimal Latitude",       
+       size = "S-W Index",
+       color = NULL) +
   xlim(min(div_per_prov$decimalLongitude)-1,
        max(div_per_prov$decimalLongitude)+0.5)+
   ylim(min(div_per_prov$decimalLatitude)-0.5,
@@ -714,7 +766,7 @@ prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
 prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
 # counts ----
 # counts vs. richness index
-ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
+counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
   geom_point() +  
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -722,11 +774,11 @@ ggplot(prov_biodiversity, aes(x = n, y = richness_index)) +
             nudge_x = 1000,
             nudge_y = 10) + 
   labs(title = "Correlation between Total Counts and Species Richness",
-       x = "total counts",
-       y = "richness index")
+       x = "Total Occurrences",
+       y = "Richness Index")
 
 # counts vs. simpson index
-ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
+counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
   geom_point() +
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -734,11 +786,11 @@ ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) +
             nudge_x = 1000,
             nudge_y = 0.03) +
   labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "total counts",
-       y = "simpson index")
+       x = "Total Occurrences",
+       y = "Simpson Index")
 
 # counts vs. shannon-wiener
-ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
+counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
   geom_point() +
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -746,12 +798,12 @@ ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) +
             nudge_x = 1000,
             nudge_y = 0.1) +
   labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "total counts",
-       y = "shannon-wiener index")
+       x = "Total Occurrences",
+       y = "Shannon-Wiener Index")
 
 # log counts -----
 # counts vs. richness index
-ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
+log_counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
   geom_point() +  
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -759,11 +811,11 @@ ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) +
             nudge_x = 0.005,
             nudge_y = 10) + 
   labs(title = "Correlation between Total Counts and Species Richness",
-       x = "total counts",
-       y = "richness index")
+       x = "Log (Total Occurrences)",
+       y = "Richness Index")
 
 # counts vs. simpson index
-ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
+log_counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
   geom_point() +
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -771,11 +823,11 @@ ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) +
             nudge_x = 0.005,
             nudge_y = 0.03) +
   labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "total counts",
-       y = "simpson index")
+       x = "Log (Total Occurrences)",
+       y = "Simpson Index")
 
 # counts vs. shannon-wiener
-ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
+log_counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
   geom_point() +
   geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
             aes(label = stateProvince),
@@ -783,8 +835,12 @@ ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) +
             nudge_x = 0.005,
             nudge_y = 0.1) +
   labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "total counts",
+       x = "Log (Total Occurrences)",
        y = "shannon-wiener index")
+
+
+corr_matrix <- cor(prov_biodiversity[c("richness_index", "simpson_index", "shannon_wiener_index", "n")])
+print(corr_matrix)
 ```
 
 # Yearly change in biodiversity
@@ -811,9 +867,9 @@ biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"spec
 ```{r}
 # richness index -----
 # Order level
-ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index)) +
+distribution_order_richness_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "goldenrod1",
+               fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -822,9 +878,9 @@ ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index))
        y = "Richness Index") 
 
 # Family level
-ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = richness_index)) +
+distribution_family_richness_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "turquoise4",
+               fill = "skyblue",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -832,9 +888,9 @@ ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = richness_index)
        x = "Year",
        y = "Richness Index") 
 
-ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index)) +
+distribution_species_richness_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "slateblue4",
+               fill = "pink1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -843,9 +899,9 @@ ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index
        y = "Richness Index") 
 
 # simpson index ----
-ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) +
+distribution_order_simpson_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "goldenrod1",
+               fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -853,9 +909,9 @@ ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) 
        x = "Year",
        y = "Simpson Index") 
 
-ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index)) +
+distribution_family_simpson_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "turquoise4",
+               fill = "skyblue",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -863,9 +919,9 @@ ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index))
        x = "Year",
        y = "Simpson Index") 
 
-ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)) +
+distribution_species_simpson_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "slateblue4",
+               fill = "pink1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -874,9 +930,9 @@ ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)
        y = "Simpson Index") 
 
 # shannon-wiener index ----
-ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+distribution_order_shannon_wiener_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "goldenrod1",
+               fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -884,9 +940,9 @@ ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_i
        x = "Year",
        y = "Shannon-Wiener Index") 
 
-ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+distribution_family_shannon_wiener_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "turquoise4",
+               fill = "skyblue",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -894,9 +950,9 @@ ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_
        x = "Year",
        y = "Shannon-Wiener Index") 
 
-ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
+distribution_species_shannon_wiener_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
-               fill = "slateblue4",
+               fill = "pink1",
                scale = "width",
                width = 0.8) +
   # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
@@ -914,7 +970,7 @@ ord_per_prov_top <- ord_per_prov %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov$stateProvince, ],
+order_per_province_counts <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = order)) +
@@ -922,8 +978,7 @@ ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov$stateProvince, 
   labs(title = "Presence per State Province by Order",
        x = "Month",
        y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 
 ###### 
@@ -933,7 +988,7 @@ fam_per_prov_top <- fam_per_prov%>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov$stateProvince, ],
+family_per_province_counts <- ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = family)) +
@@ -941,8 +996,7 @@ ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov$stateProvince, 
   labs(title = "Presence per Month by Family",
        x = "Month",
        y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 ###### 
 # species per stateProvince
@@ -951,7 +1005,7 @@ spp_per_prov_top <- spp_per_prov %>%
   top_n(5, total_count) %>%
   ungroup()
 
-ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, ],
+species_per_province_counts <- ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = species)) +
@@ -959,8 +1013,7 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov$stateProvince, 
   labs(title = "Presence per Month by Species",
        x = "Month",
        y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 ```
 
@@ -979,10 +1032,11 @@ count_biodiv_top_prov_barplot <- ggplot(prov_biodiversity_top,
                                             fill = n)) +
   geom_bar(stat = "identity") +
   # coord_polar("y", start=0) + 
-  scale_fill_continuous(low="lightgreen", high="darkblue") +
+  scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
-     y = "Count")
+     y = "Count",
+     fill = "Total Occurrences")
 
 shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top, 
                                           aes(x = reorder(stateProvince,shannon_wiener_index),
@@ -990,13 +1044,15 @@ shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top,
                                               fill = shannon_wiener_index)) +
   geom_bar(stat = "identity") +
   # coord_polar("y", start=0) + 
-  scale_fill_continuous(low="lightgreen", high="darkblue") +
+  scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
-     y = "Count")
+     y = "Count",
+     fill = "S-W Index")
 
 grid.arrange(count_biodiv_top_prov_barplot, shannon_wiener_top_prov_barplot, nrow = 2) 
 ```
+
 # dominant groups per province
 ```{r}
 # order per stateProvince -----
@@ -1006,16 +1062,16 @@ ord_per_prov_top <- ord_per_prov %>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+order_per_province_shannon <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = order)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Province by Order",
+  labs(title = "Presence per Province by Order (by Shannon-Wiener Index)",
        x = "Province",
-       y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+       y = "Abundance (Proportion)",
+       fill = "Order") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 
 # families per stateProvince -----
@@ -1025,16 +1081,16 @@ fam_per_prov_top <- fam_per_prov%>%
   top_n(8, total_count) %>%
   ungroup()
 
-ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+family_per_province_shannon <- ggplot(fam_per_prov_top[fam_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = family)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Province by Family",
+  labs(title = "Presence per Province by Family (by Shannon-Wiener Index)",
        x = "Province",
-       y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+       y = "Abundance (Proportion)",
+       fill = "Family") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 # species per stateProvince -----
 spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
@@ -1043,36 +1099,19 @@ spp_per_prov_top <- spp_per_prov %>%
   top_n(5, total_count) %>%
   ungroup()
 
-ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
+species_per_province_shannon <- ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_top$stateProvince, ],
        aes(x = stateProvince,
            y = total_count,
            fill = species)) +
   geom_bar(position = position_fill(), stat = "identity") +
-  labs(title = "Presence per Province by Species",
+  labs(title = "Presence per Province by Species (by Shannon-Wiener Index)",
        x = "Province",
        y = "Abundance (Proportion)") +
-  scale_fill_viridis_d() #+
-  # theme(legend.position="none")
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 ```
-# Exporting all plots
-```{r}
-# ggsave(
-#   filename,
-#   plot = last_plot(),
-#   device = NULL,
-#   path = NULL,
-#   scale = 1,
-#   width = NA,
-#   height = NA,
-#   units = c("in", "cm", "mm", "px"),
-#   dpi = 300,
-#   limitsize = TRUE,
-#   bg = NULL,
-#   ...
-# )
 
-```
+
 
 
 
