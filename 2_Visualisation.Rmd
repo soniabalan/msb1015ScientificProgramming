@@ -327,7 +327,7 @@ species_abundance_no_albiformis <- ggplot(spp_top_sans1,
   # geom_text(aes(label=species),
   #           size=3,
   #           position = position_stack(vjust = 0)) +
-  labs(title = "Top Genus (without Anser albiformis)",
+  labs(title = "Top Species (without Anser albiformis)",
      x = "Species",
      y = NULL,
      fill = "Abundance") +
@@ -1175,7 +1175,7 @@ order_per_province_counts <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProvi
 ggsave( "Figures/order_per_province_counts.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 
 ###### 
 # families per stateProvince
@@ -1197,7 +1197,7 @@ family_per_province_counts <- ggplot(fam_per_prov_top[fam_per_prov_top$stateProv
 ggsave( "Figures/family_per_province_counts.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 
 ###### 
 # species per stateProvince
@@ -1219,7 +1219,7 @@ species_per_province_counts <- ggplot(spp_per_prov_top[spp_per_prov_top$statePro
 ggsave( "Figures/species_per_province_counts.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 
 ```
 
@@ -1242,7 +1242,8 @@ count_biodiv_top_prov_barplot <- ggplot(prov_biodiversity_top,
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
      y = "Count",
-     fill = "Total Occurrences")
+     fill = "Total Occurrences")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top, 
                                           aes(x = reorder(stateProvince,shannon_wiener_index),
@@ -1254,9 +1255,11 @@ shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top,
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
      y = "Count",
-     fill = "S-W Index")
+     fill = "S-W Index")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
 grid.arrange(count_biodiv_top_prov_barplot, shannon_wiener_top_prov_barplot, nrow = 2) 
+# occurences_per_province_by_shannon
 ```
 
 # dominant groups per province
@@ -1282,7 +1285,7 @@ order_per_province_shannon <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProv
 ggsave( "Figures/order_per_province_shannon.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 
 
 # families per stateProvince -----
@@ -1306,7 +1309,7 @@ family_per_province_shannon <- ggplot(fam_per_prov_top[fam_per_prov_top$statePro
 ggsave( "Figures/family_per_province_shannon.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 
 # species per stateProvince -----
 spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
@@ -1325,10 +1328,10 @@ species_per_province_shannon <- ggplot(spp_per_prov_top[spp_per_prov_top$statePr
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-ggsave( "Figures/family_per_province_shannon.png",
+ggsave( "Figures/species_per_province_shannon.png",
   plot = last_plot(),
   device = "png",
-  width = 6, height = 4)
+  width = 6, height = 6)
 ```
 
 
