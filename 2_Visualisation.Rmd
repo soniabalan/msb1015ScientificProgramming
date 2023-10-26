@@ -55,14 +55,21 @@ colnames(data_vis)[column_index] <- "stateProvince"
 # Diagnostics Plots -------------------------------
   Cutoff Decision
 ```{r}
-# aes(x = Start.date %>% format('%Y'))
-threshold = 2013 #threshold year
-ggplot(data_vis,aes(eventDate %>% format('%Y'))) +
-  geom_bar(fill = "#00501B") +
+threshold = as.Date("2013-01-01") %>% format('%Y')
+occurrences_per_year_complete <- ggplot(data_vis,aes(eventDate %>% format('%Y'))) +
+  geom_bar(fill = "palegreen4") +
   geom_vline(xintercept = threshold,
-             linewidth = 0.5,
-             color = "black")
+             linewidth = 1,
+             color = "royalblue4") +
+  scale_x_discrete(breaks = seq(1873, 2023, by = 5)) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  labs(title = "Nr. Occurrences per Year - Complete Dataset", 
+       x = "Occurrences (Count)",
+       y = "Year")
+
+# observations_per_year_complete
 ```
+
 # per time
 ```{r}
 # ---------------
@@ -71,71 +78,121 @@ data_vis <-data_vis %>%
 
 # Occurences per time unit ------
 # nr of occurences/year
-ggplot(data_vis, aes(eventDate %>% format('%Y'))) +
-  geom_bar(fill = "#0E6251")+
-  labs(title = paste("Occurences per Year"),
+occurrences_per_year_filtered <- data_vis %>%
+  group_by(year = eventDate %>% format('%Y')) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = year,
+             y = count,
+             fill = count)) +
+  geom_bar(stat = "identity") +
+  scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
+  labs(title = "Occurences per Year",
      x = "Year",
-     y = "Count")
+     y = "Occurences (Count)",
+     fill = "Count")
 
-# nr of occurences/month 
-data_vis %>%
+occurrences_per_year_filtered
+
+# nr of occurences/month ----
+occurrences_per_month <- data_vis %>%
   group_by(month = eventDate %>% format('%b')) %>%
   summarise(count = n()) %>%
-  ggplot(aes(x = month, y = count, fill = count)) +
+  ggplot(aes(x = month,
+             y = count, 
+             fill = count)) +
   geom_bar(stat = "identity") +
   labs(title = paste("Occurences per Month"),
      x = "Month",
-     y = "Count") +
-  # scale_fill_continuous(low = "darkslategray3", high = "maroon") + 
+     y = "Occurences (Count)",
+     fill = "Count") +
+  scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
   scale_x_discrete(limits = c("Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))
 
-# nr of occurences/day
-ggplot(data_vis, aes(eventDate %>% format('%d'))) +
-  geom_bar(fill = "#1B4F72") +
+occurrences_per_month
+
+# nr of occurences/day ----
+occurrences_per_monthday <- data_vis %>%
+  group_by(day = eventDate %>% format('%d')) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = day,
+             y = count, 
+             fill = count)) +
+  geom_bar(stat = "identity") +
+  scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
   labs(title = paste("Occurences per Day"),
      x = "Day",
-     y = "Count")
+     y = "Occurences (Count)", 
+     fill = "Count")
+
+occurrences_per_monthday
 
 # nr of occurences/weekday
-ggplot(data_vis, aes(eventDate %>% format('%a'))) +
-  geom_bar(fill = "#1B4F72") +
+occurrences_per_weekday <- data_vis %>%
+  group_by(day = eventDate %>% format('%a')) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = day,
+             y = count, 
+             fill = count)) +
+  geom_bar(stat = "identity") +
+  scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
   labs(title = paste("Occurences per Weekday"),
      x = "Weekday",
-     y = "Count") +
+     y = "Occurences (Count)",
+     fill = "Count") +
   scale_x_discrete(limits = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
+
+occurrences_per_weekday
 ```
 
 # occurences per location
 ```{r}
 # top province -----
-prov <- data_vis %>%
+prov_all <- data_vis %>%
   group_by(stateProvince) %>%
   summarize(n = n()) %>%
-  arrange(desc(n)) %>%
-  top_n(11,n)
-prov <- prov[-1,] # the top entry is NA
+  arrange(desc(n)) 
+prov_all <- prov_all[!is.na(prov_all$stateProvince),] # the top entry is NA
+prov <- prov_all[1:10,]
 
-# color_scale <- scale_fill_gradient(low = "lightblue", high = "darkblue")
-ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = n)) +
+
+occurrences_per_province_complete <- ggplot(prov_all, aes(x = reorder(stateProvince,n), 
+                                                          y = n, 
+                                                          fill = n)) +
   geom_bar(stat = "identity") +
   # coord_polar("y", start=0) + 
-  scale_fill_continuous(low="lightgreen", high="darkblue") +
+  scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   labs(title = paste("Occurences per County"),
      x = "County",
-     y = "Count")
+     y = "Occurrences (Count)",
+     fill = "Count")
+
+# occurrences_per_province_complete
+
+occurrences_per_province_top10 <- ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = n)) +
+  geom_bar(stat = "identity") +
+  # coord_polar("y", start=0) + 
+  scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  labs(title = paste("Occurences per County"),
+     x = "County",
+     y = "Occurrences (Count)",
+     fill = "Count")
+
+# occurrences_per_province_top10
 
 # latitude and longitude -----------
 latitude_barplot <- ggplot(data_vis, aes(decimalLatitude)) +
-  geom_histogram(fill = "#1B4F72") +
+  geom_histogram(fill = "deepskyblue3") +
   labs(title = paste("Occurences per Latitude"),
      x = "Latitude",
-     y = "Count")
+     y = "Occurrences (Count)")
 longitude_barplot <- ggplot(data_vis, aes(decimalLongitude)) +
-  geom_histogram(fill = "#1B4F72") +
+  geom_histogram(fill = "deepskyblue3") +
   labs(title = paste("Occurences per Longitude"),
      x = "Longitude",
-     y = "Count")
-grid.arrange(latitude_barplot, longitude_barplot, nrow = 2) 
+     y = "Occurrences (Count)")
+occurrences_per_coordinates <- grid.arrange(latitude_barplot, longitude_barplot, nrow = 2)
 ```
 
 # Map View
@@ -165,13 +222,15 @@ ggplot(data_vis,
            y = decimalLatitude)) + 
   geom_point(alpha = 0.01, 
              size = 0.25) +
-  # coord_equal() +
-  xlab('Longitude') + 
-  ylab('Latitude') + 
+  labs(title = "Density of Observations",
+       x = "Longitude",
+       y = "Latitude")
+  # xlab('Longitude') + 
+  # ylab('Latitude') + 
   stat_density2d(aes(fill = ..level..), alpha = .75,
                  geom = "polygon", data = data_vis) +
   scale_fill_viridis_c() +
-  # theme(legend.position = 'none') 
+  theme(legend.position = 'none')
   xlim(20,30) +
   ylim(min(data_vis$decimalLatitude),max(data_vis$decimalLatitude)) +
   geom_text(data = top_centers, 
@@ -237,6 +296,7 @@ ggplot(gen_top_sans1, aes(x = reorder(genus, total_count),
      x = "Genus",
      y = "Abundance")
 ```
+
 # dominant groups per month
 ```{r}
 #######
@@ -298,6 +358,7 @@ ggplot(spp_per_month_top,
   scale_fill_viridis_d()
 
 ```
+
 # dominant groups per year
 ```{r}
 #######
@@ -994,5 +1055,24 @@ ggplot(spp_per_prov_top[spp_per_prov_top$stateProvince %in% prov_biodiversity_to
   # theme(legend.position="none")
 
 ```
+# Exporting all plots
+```{r}
+# ggsave(
+#   filename,
+#   plot = last_plot(),
+#   device = NULL,
+#   path = NULL,
+#   scale = 1,
+#   width = NA,
+#   height = NA,
+#   units = c("in", "cm", "mm", "px"),
+#   dpi = 300,
+#   limitsize = TRUE,
+#   bg = NULL,
+#   ...
+# )
+
+```
+
 
 
