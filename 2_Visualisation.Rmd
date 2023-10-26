@@ -70,8 +70,10 @@ occurrences_per_year_complete <- ggplot(data_vis,aes(eventDate %>% format('%Y'))
        y = "Year")
 
 # occurrences_per_year_complete
-ggsave( "Figures/occurrences_per_year_complete",
-  plot = last_plot())
+ggsave( "Figures/occurrences_per_year_complete.png",
+  plot = last_plot(),
+  device = "png",
+  width = 10, height = 4)
 ```
 
 # per time
@@ -95,7 +97,11 @@ occurrences_per_year_filtered <- data_vis %>%
      y = "Occurences (Count)",
      fill = "Count")
 
-occurrences_per_year_filtered
+# occurrences_per_year_filtered
+ggsave( "Figures/occurrences_per_year_filtered.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # nr of occurences/month ----
 occurrences_per_month <- data_vis %>%
@@ -112,7 +118,11 @@ occurrences_per_month <- data_vis %>%
   scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
   scale_x_discrete(limits = c("Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))
 
-occurrences_per_month
+# occurrences_per_month
+ggsave( "Figures/occurrences_per_month.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # nr of occurences/day ----
 occurrences_per_monthday <- data_vis %>%
@@ -128,7 +138,11 @@ occurrences_per_monthday <- data_vis %>%
      y = "Occurences (Count)", 
      fill = "Count")
 
-occurrences_per_monthday
+# occurrences_per_monthday
+ggsave( "Figures/occurrences_per_monthday.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # nr of occurences/weekday
 occurrences_per_weekday <- data_vis %>%
@@ -145,7 +159,11 @@ occurrences_per_weekday <- data_vis %>%
      fill = "Count") +
   scale_x_discrete(limits = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
 
-occurrences_per_weekday
+# occurrences_per_weekday
+ggsave( "Figures/occurrences_per_weekday.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 # occurences per location
@@ -172,6 +190,11 @@ occurrences_per_province_complete <- ggplot(prov_all, aes(x = reorder(stateProvi
      fill = "Count")
 
 # occurrences_per_province_complete
+ggsave( "Figures/occurrences_per_province_complete.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 
 occurrences_per_province_top10 <- ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = n)) +
   geom_bar(stat = "identity") +
@@ -184,6 +207,10 @@ occurrences_per_province_top10 <- ggplot(prov, aes(x = reorder(stateProvince,n),
      fill = "Count")
 
 # occurrences_per_province_top10
+ggsave( "Figures/occurrences_per_province_top10.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # latitude and longitude -----------
 latitude_barplot <- ggplot(data_vis, aes(decimalLatitude)) +
@@ -252,7 +279,11 @@ occurrences_map <- ggplot(data_vis,
              alpha = 0.4) +
   theme(panel.background = element_blank())  
 
-occurrences_map
+# occurrences_map
+ggsave( "Figures/occurrences_map.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 # Most dominant groups overall
@@ -280,6 +311,10 @@ species_abundence_top <- ggplot(spp_top,
   theme(panel.background = element_rect(fill = "transparent"))
 
 # species_abundence_top
+ggsave( "Figures/species_abundence_top.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # most abundent birds (overall), without Anser albiformis (outlier?)
 species_abundance_no_albiformis <- ggplot(spp_top_sans1,
@@ -298,6 +333,10 @@ species_abundance_no_albiformis <- ggplot(spp_top_sans1,
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
 # species_abundance_no_albiformis
+ggsave( "Figures/species_abundance_no_albiformis.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # top genus --------
 gen_total <- process_counts(data_vis, "genus")
@@ -315,6 +354,10 @@ genus_abundance_top <- ggplot(gen_top, aes(x = reorder(genus, total_count),
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
 # genus_abundance_top
+ggsave( "Figures/genus_abundance_top.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # most abundent birds (overall) without waxwings
 gen_top_sans1 <- gen_top[-1,]
@@ -330,6 +373,10 @@ genus_abundance_no_anser <- ggplot(gen_top_sans1, aes(x = reorder(genus, total_c
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
 # genus_abundance_no_anser
+ggsave( "Figures/genus_abundance_no_anser.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 # dominant groups per month
@@ -353,6 +400,10 @@ order_per_month_plot <- ggplot(ord_per_month_top,
        fill = "Order") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
 # order_per_month_plot
+ggsave( "Figures/order_per_month_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ###### 
 # families per month
@@ -372,6 +423,11 @@ family_per_month_plot <- ggplot(fam_per_month_top,
        y = "Abundance (Proportion)",
        fill = "Family") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
+# family_per_month_plot
+ggsave( "Figures/family_per_month_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ###### 
 # species per month
@@ -392,6 +448,10 @@ species_per_month_plot <- ggplot(spp_per_month_top,
        fill = "Species") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
 # species_per_month_plot
+ggsave( "Figures/species_per_month_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ```
 
@@ -415,6 +475,10 @@ order_per_year_plot <- ggplot(ord_per_yr_top,
        y = "Abundance (Proportion)",
        fill = "Order") 
 # order_per_year_plot
+ggsave( "Figures/order_per_year_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ###### 
 # families per month
@@ -434,6 +498,10 @@ family_per_year_plot <- ggplot(fam_per_yr_top,
        y = "Abundance (Proportion)",
        fill = "Family") 
 # family_per_year_plot
+ggsave( "Figures/family_per_year_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ###### 
 # species per month
@@ -453,6 +521,10 @@ species_per_year_plot <- ggplot(spp_per_yr_top,
        y = "Abundance (Proportion)",
        fill = "Species") 
 # species_per_year_plot
+ggsave( "Figures/species_per_year_plot.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 # Biodiversity
@@ -512,7 +584,12 @@ map_order_richness_index <- ggplot(data = div_per_prov,
             nudge_x = 0.15,
             nudge_y = 0.2) + 
   scale_color_gradient(low = "yellow", high = "purple") +
-  theme(panel.background = element_blank())  
+  theme(panel.background = element_blank()) 
+
+ggsave( "Figures/map_order_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 'SIMPSON INDEX'
 map_order_simpson_index <- ggplot(data = div_per_prov, 
@@ -543,6 +620,11 @@ map_order_simpson_index <- ggplot(data = div_per_prov,
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
 
+ggsave( "Figures/map_order_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 'SHANON-WIENER INDEX '
 map_order_shannon_wiener_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
@@ -571,6 +653,11 @@ map_order_shannon_wiener_index <- ggplot(data = div_per_prov,
             nudge_y = 0.2) + 
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
+
+ggsave( "Figures/map_order_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 
 # FAMILY --------
@@ -603,6 +690,11 @@ map_family_richness_index <- ggplot(data = div_per_prov,
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
 
+ggsave( "Figures/map_family_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 'SIMPSON INDEX'
 map_family_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
@@ -632,6 +724,11 @@ map_family_simpson_index <- ggplot(data = div_per_prov,
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
 
+ggsave( "Figures/map_family_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 'SHANON-WIENER INDEX '
 map_family_shannon_wiener_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
@@ -660,6 +757,11 @@ map_family_shannon_wiener_index <- ggplot(data = div_per_prov,
             nudge_y = 0.2) + 
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
+
+ggsave( "Figures/map_family_shannon_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 'SPECIES'
 # SPECIES --------
@@ -692,6 +794,11 @@ map_species_richness_index <- ggplot(data = div_per_prov,
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
 
+ggsave( "Figures/map_species_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 'SIMPSON INDEX'
 map_species_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
@@ -720,6 +827,11 @@ map_species_simpson_index <- ggplot(data = div_per_prov,
             nudge_y = 0.2) + 
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
+
+ggsave( "Figures/map_species_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 'SHANON-WIENER INDEX '
 
@@ -751,6 +863,11 @@ map_species_shannon_wiener_index <- ggplot(data = div_per_prov,
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank())  
 
+ggsave( "Figures/map_species_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 
 ```
 
@@ -777,6 +894,11 @@ counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = n, y = richness_in
        x = "Total Occurrences",
        y = "Richness Index")
 
+ggsave( "Figures/counts_vs_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # counts vs. simpson index
 counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
   geom_point() +
@@ -789,6 +911,11 @@ counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = n, y = simpson_inde
        x = "Total Occurrences",
        y = "Simpson Index")
 
+ggsave( "Figures/counts_vs_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # counts vs. shannon-wiener
 counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
   geom_point() +
@@ -800,6 +927,11 @@ counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = n, y = shann
   labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
        x = "Total Occurrences",
        y = "Shannon-Wiener Index")
+
+ggsave( "Figures/counts_vs_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # log counts -----
 # counts vs. richness index
@@ -814,6 +946,11 @@ log_counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = log(n), y = ri
        x = "Log (Total Occurrences)",
        y = "Richness Index")
 
+ggsave( "Figures/log_counts_vs_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # counts vs. simpson index
 log_counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
   geom_point() +
@@ -826,6 +963,11 @@ log_counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = log(n), y = sim
        x = "Log (Total Occurrences)",
        y = "Simpson Index")
 
+ggsave( "Figures/log_counts_vs_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # counts vs. shannon-wiener
 log_counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
   geom_point() +
@@ -837,6 +979,11 @@ log_counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = log(n), 
   labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
        x = "Log (Total Occurrences)",
        y = "shannon-wiener index")
+
+ggsave( "Figures/log_counts_vs_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 
 corr_matrix <- cor(prov_biodiversity[c("richness_index", "simpson_index", "shannon_wiener_index", "n")])
@@ -877,6 +1024,11 @@ distribution_order_richness_index <- ggplot(biodiv_yearly_order, aes(x = factor(
        x = "Year",
        y = "Richness Index") 
 
+ggsave( "Figures/distribution_order_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # Family level
 distribution_family_richness_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
@@ -888,6 +1040,11 @@ distribution_family_richness_index <- ggplot(biodiv_yearly_family, aes(x = facto
        x = "Year",
        y = "Richness Index") 
 
+ggsave( "Figures/distribution_family_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 distribution_species_richness_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
@@ -897,6 +1054,11 @@ distribution_species_richness_index <- ggplot(biodiv_yearly_species, aes(x = fac
   labs(title = "Richness Index Over Time (Species level)",
        x = "Year",
        y = "Richness Index") 
+
+ggsave( "Figures/distribution_species_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # simpson index ----
 distribution_order_simpson_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) +
@@ -909,6 +1071,11 @@ distribution_order_simpson_index <- ggplot(biodiv_yearly_order, aes(x = factor(f
        x = "Year",
        y = "Simpson Index") 
 
+ggsave( "Figures/distribution_order_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 distribution_family_simpson_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "skyblue",
@@ -919,6 +1086,11 @@ distribution_family_simpson_index <- ggplot(biodiv_yearly_family, aes(x = factor
        x = "Year",
        y = "Simpson Index") 
 
+ggsave( "Figures/distribution_family_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 distribution_species_simpson_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
@@ -928,6 +1100,11 @@ distribution_species_simpson_index <- ggplot(biodiv_yearly_species, aes(x = fact
   labs(title = "Simpson Index Over Time (Species level)",
        x = "Year",
        y = "Simpson Index") 
+
+ggsave( "Figures/distribution_species_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 # shannon-wiener index ----
 distribution_order_shannon_wiener_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
@@ -940,6 +1117,11 @@ distribution_order_shannon_wiener_index <- ggplot(biodiv_yearly_order, aes(x = f
        x = "Year",
        y = "Shannon-Wiener Index") 
 
+ggsave( "Figures/distribution_order_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 distribution_family_shannon_wiener_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "skyblue",
@@ -950,6 +1132,11 @@ distribution_family_shannon_wiener_index <- ggplot(biodiv_yearly_family, aes(x =
        x = "Year",
        y = "Shannon-Wiener Index") 
 
+ggsave( "Figures/distribution_family_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 distribution_species_shannon_wiener_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
@@ -959,6 +1146,11 @@ distribution_species_shannon_wiener_index <- ggplot(biodiv_yearly_species, aes(x
   labs(title = "Sihannon-Wiener Index Over Time (Species level)",
        x = "Year",
        y = "Shannon-Wiener Index") 
+
+ggsave( "Figures/distribution_species_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 # dominant groups per province - based on counts
@@ -980,6 +1172,10 @@ order_per_province_counts <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProvi
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+ggsave( "Figures/order_per_province_counts.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ###### 
 # families per stateProvince
@@ -998,6 +1194,11 @@ family_per_province_counts <- ggplot(fam_per_prov_top[fam_per_prov_top$stateProv
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+ggsave( "Figures/family_per_province_counts.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 ###### 
 # species per stateProvince
 spp_per_prov_top <- spp_per_prov %>%
@@ -1014,6 +1215,11 @@ species_per_province_counts <- ggplot(spp_per_prov_top[spp_per_prov_top$statePro
        x = "Month",
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+
+ggsave( "Figures/species_per_province_counts.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 
 ```
 
@@ -1073,6 +1279,11 @@ order_per_province_shannon <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProv
        fill = "Order") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+ggsave( "Figures/order_per_province_shannon.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 
 # families per stateProvince -----
 fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
@@ -1092,6 +1303,11 @@ family_per_province_shannon <- ggplot(fam_per_prov_top[fam_per_prov_top$statePro
        fill = "Family") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+ggsave( "Figures/family_per_province_shannon.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
 # species per stateProvince -----
 spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
 spp_per_prov_top <- spp_per_prov %>%
@@ -1109,6 +1325,10 @@ species_per_province_shannon <- ggplot(spp_per_prov_top[spp_per_prov_top$statePr
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+ggsave( "Figures/family_per_province_shannon.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
 ```
 
 
