@@ -1168,7 +1168,7 @@ order_per_province_counts <- ggplot(ord_per_prov_top[ord_per_prov_top$stateProvi
            fill = order)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per State Province by Order",
-       x = "Month",
+       x = "Province",
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
@@ -1190,7 +1190,7 @@ family_per_province_counts <- ggplot(fam_per_prov_top[fam_per_prov_top$stateProv
            fill = family)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Month by Family",
-       x = "Month",
+       x = "Province",
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
@@ -1212,7 +1212,7 @@ species_per_province_counts <- ggplot(spp_per_prov_top[spp_per_prov_top$statePro
            fill = species)) +
   geom_bar(position = position_fill(), stat = "identity") +
   labs(title = "Presence per Month by Species",
-       x = "Month",
+       x = "Province",
        y = "Abundance (Proportion)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
