@@ -31,8 +31,12 @@ data_vis <- read.csv("Data/data_clean.csv",
                  stringsAsFactors=TRUE)
 data_vis$eventDate <- as.Date(data_vis$eventDate)
 ```
-# Diagnostics Plots -------------------------------
-  Cutoff Decision
+
+# EXPLORATORY PLOTS ---------------------------------------------------------
+
+The following section generates several exploratory and diagnostics plots from the data.
+
+  - Cutoff Decision: many years have only a few occurrences recorder, therefore only data from the last 10 years (2013-2023) is kept
 ```{r}
 threshold = as.Date("2013-01-01") %>% format('%Y')
 occurrences_per_year_complete <- ggplot(data_vis,aes(eventDate %>% format('%Y'))) +
@@ -51,16 +55,15 @@ ggsave( "Figures/occurrences_per_year_complete.png",
   plot = last_plot(),
   device = "png",
   width = 10, height = 4)
-```
 
-# per time
-```{r}
-# ---------------
+# filter data
 data_vis <-data_vis %>%
   filter(eventDate >= as.Date("2013-01-01"))
+```
 
-# Occurences per time unit ------
-# nr of occurences/year
+  - Total Occurrences Per Time: This section generates plots that show how many observations were made each year, month, day of the month and day of the week
+```{r}
+# Occurences per Year -----
 occurrences_per_year_filtered <- data_vis %>%
   group_by(year = eventDate %>% format('%Y')) %>%
   summarise(count = n()) %>%
@@ -74,13 +77,12 @@ occurrences_per_year_filtered <- data_vis %>%
      y = "Occurences (Count)",
      fill = "Count")
 
-# occurrences_per_year_filtered
 ggsave( "Figures/occurrences_per_year_filtered.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# nr of occurences/month ----
+# Occurrences per Month -----
 occurrences_per_month <- data_vis %>%
   group_by(month = eventDate %>% format('%b')) %>%
   summarise(count = n()) %>%
@@ -95,13 +97,12 @@ occurrences_per_month <- data_vis %>%
   scale_fill_continuous(low = "palegreen1", high = "palegreen4") + 
   scale_x_discrete(limits = c("Jan", "Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"))
 
-# occurrences_per_month
 ggsave( "Figures/occurrences_per_month.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# nr of occurences/day ----
+# Occurrences per Day of the Month -----
 occurrences_per_monthday <- data_vis %>%
   group_by(day = eventDate %>% format('%d')) %>%
   summarise(count = n()) %>%
@@ -115,13 +116,12 @@ occurrences_per_monthday <- data_vis %>%
      y = "Occurences (Count)", 
      fill = "Count")
 
-# occurrences_per_monthday
 ggsave( "Figures/occurrences_per_monthday.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# nr of occurences/weekday
+# Occurrences per Weekday -----
 occurrences_per_weekday <- data_vis %>%
   group_by(day = eventDate %>% format('%a')) %>%
   summarise(count = n()) %>%
@@ -136,29 +136,27 @@ occurrences_per_weekday <- data_vis %>%
      fill = "Count") +
   scale_x_discrete(limits = c("Mon","Tue","Wed","Thu","Fri","Sat","Sun"))
 
-# occurrences_per_weekday
 ggsave( "Figures/occurrences_per_weekday.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 ```
 
-# occurences per location
+  - Total Occurrences Per Location: This section generates plots that show how many observations were made in each province, the top 10 provinces with the highest number of observations, and per longitude and lattitude
 ```{r}
-# top province -----
+# Top Provinces -----
 prov_all <- data_vis %>%
   group_by(stateProvince) %>%
   summarize(n = n()) %>%
   arrange(desc(n)) 
-prov_all <- prov_all[!is.na(prov_all$stateProvince),] # the top entry is NA
+prov_all <- prov_all[!is.na(prov_all$stateProvince),]
 prov <- prov_all[1:10,]
 
-
+# Occurrences per Province (all provinces) ----
 occurrences_per_province_complete <- ggplot(prov_all, aes(x = reorder(stateProvince,n), 
                                                           y = n, 
                                                           fill = n)) +
   geom_bar(stat = "identity") +
-  # coord_polar("y", start=0) + 
   scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   labs(title = paste("Occurences per County"),
@@ -166,16 +164,14 @@ occurrences_per_province_complete <- ggplot(prov_all, aes(x = reorder(stateProvi
      y = "Occurrences (Count)",
      fill = "Count")
 
-# occurrences_per_province_complete
 ggsave( "Figures/occurrences_per_province_complete.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-
+# Occurrences per Province (top 10 provinces) -----
 occurrences_per_province_top10 <- ggplot(prov, aes(x = reorder(stateProvince,n), y = n, fill = n)) +
-  geom_bar(stat = "identity") +
-  # coord_polar("y", start=0) + 
+  geom_bar(stat = "identity") + 
   scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
     theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   labs(title = paste("Occurences per County"),
@@ -183,13 +179,12 @@ occurrences_per_province_top10 <- ggplot(prov, aes(x = reorder(stateProvince,n),
      y = "Occurrences (Count)",
      fill = "Count")
 
-# occurrences_per_province_top10
 ggsave( "Figures/occurrences_per_province_top10.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# latitude and longitude -----------
+# Occurrences per Longitude and Latitude
 latitude_barplot <- ggplot(data_vis, aes(decimalLatitude)) +
   geom_histogram(fill = "deepskyblue3") +
   labs(title = paste("Occurences per Latitude"),
@@ -202,9 +197,9 @@ longitude_barplot <- ggplot(data_vis, aes(decimalLongitude)) +
      y = "Occurrences (Count)")
 occurrences_per_coordinates <- grid.arrange(latitude_barplot, longitude_barplot, nrow = 2)
 ```
-
-# Map View
+  - Additional to the Occurrence bar plots above, this section generates a map that shows each observation made at its coordinates. The density of observations is also plotted. The label for each of the provinces (the top 10 ones, as defined above) is placed at the center of each province, determined by the city with the highest population (from the data retrieved from https://github.com/romania/localitati)
 ```{r}
+# read data about cities in Romania to identify the coordinates of centers
 cities_list <- read.csv("Data/orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",
@@ -224,7 +219,7 @@ centers <-cities_list %>%
 
 top_centers <- centers[centers$stateProvince %in% prov$stateProvince, ]
 
-# many points to plot - takes time to plot
+# Map Observation Density -----
 occurrences_map <- ggplot(data_vis,
        aes(x = decimalLongitude,
            y = decimalLatitude)) + 
@@ -233,8 +228,6 @@ occurrences_map <- ggplot(data_vis,
   labs(title = "Density of Observations",
        x = "Longitude",
        y = "Latitude") +
-  # xlab('Longitude') + 
-  # ylab('Latitude') + 
   stat_density2d(data = data_vis, aes(fill = ..level..),
                  alpha = .75,
                  geom = "polygon") +
@@ -256,14 +249,13 @@ occurrences_map <- ggplot(data_vis,
              alpha = 0.4) +
   theme(panel.background = element_blank())  
 
-# occurrences_map
 ggsave( "Figures/occurrences_map.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 ```
 
-# Most dominant groups overall
+# MOST OBSERVED BIRDS 
 ```{r}
 # top species ------
 spp_total <- process_counts(data_vis, "species")
