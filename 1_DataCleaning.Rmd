@@ -37,16 +37,18 @@ GBIF Query used to retreive this data (using occ_download)):
 # install.packages("sf") # co=requisite of "rgeos", takes a long time to install
 # install.packages("rgeos") # rgeos has been archived in 2023!
 
-# Libraries loading
-library(rgbif)
-library(dplyr)
-library(stringr)
-library(rstudioapi)
-library(stringdist)
-library(microbenchmark)
-library(doParallel)
-library(sp)
-library(rgeos)
+# # Libraries loading
+# library(rgbif)
+# library(dplyr)
+# library(stringr)
+# library(rstudioapi)
+# library(stringdist)
+# library(microbenchmark)
+# library(doParallel)
+# library(sp)
+# library(rgeos)
+
+source('0_Dependencies.R')
 
 # set wrok environment
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
@@ -108,23 +110,14 @@ data = data_raw %>% select(-remove_vars)
 data <- data[-which(data$order == ""), ]
 data <- data[!is.na(data$order), ]
 
-# # factorize data stored as characters
-# data[sapply(data, is.character)] <- lapply(data[sapply(data, is.character)],as.factor)
-# data$month <- as.factor(data$month)
-
 # replace NAs in count data by 1
 data$individualCount <- replace(data$individualCount, is.na(data$individualCount), 1)
 data$individualCount <- replace(data$individualCount, data$individualCount == 0, 1)
-
-# # summaries of remaining columns - for debugging
-# for (var in colnames(data)) {
-#   print(summary(data[,var]))
-# }
 ```
   Location Data
   Using information from: city/county database from https://github.com/romania/localitati
 ```{r}
-############################################################
+# load 
 cities_list <- read.csv("Data/orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",

@@ -8,15 +8,18 @@ package_list = c("rstudioapi",
                  "doParallel",
                  "sp",
                  "sf", # co=requisite of "rgeos", takes a long time to install
-                 "rgeos", # rgeos has been archived in 2023!
+                 # "rgeos", # rgeos has been archived in 2023 - you might not be able to install it on your machine
                  "ggplot2",
-                 "ggmap",
                  "gridExtra",
                  "jpeg")
 
 
 for (package in package_list) {
-  if (!require(devtools)) install.packages(package)
+  if (!require(package, character.only = TRUE)) {
+    # If the package is not available, install it
+    install.packages(package)
+  }
+  library(package, character.only = TRUE)
 }
 
-library(package_list)
+
