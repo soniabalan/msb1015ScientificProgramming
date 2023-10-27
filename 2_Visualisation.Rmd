@@ -18,41 +18,18 @@ Data Info:
 ---
 # Setup
 ```{r}
-# install.packages("ggplot2")
-# install.packages("dplyr")
-# install.packages("sf")
-# install.packages("ggmap")
-# install.packages("gridExtra")
-# install.packages("RColorBrewer")
-# install.packages("vegan")
-# install.packages("abdiv")
-# install.packages("jpeg")
-
-
-library(ggplot2)
-library(dplyr)
-library(sf)
-library(gridExtra)
-library(ggmap)
-library(RColorBrewer)
-library(vegan)
-library(rstudioapi)
-library(jpeg)
-
-# load custom functions
+source('0_Dependencies.R')
 source("Custom_functions.R")
 
+# set wrok environment
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+
+
 # load data from file
-data_vis <- read.csv("data_clean.csv",
+data_vis <- read.csv("Data/data_clean.csv",
                  header=TRUE,
                  stringsAsFactors=TRUE)
 data_vis$eventDate <- as.Date(data_vis$eventDate)
-
-'HOTFIX'
-column_index <- which(colnames(data_vis) == "stateProvince.stateProvince")
-colnames(data_vis)[column_index] <- "stateProvince"
-
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 ```
 # Diagnostics Plots -------------------------------
   Cutoff Decision
@@ -228,7 +205,7 @@ occurrences_per_coordinates <- grid.arrange(latitude_barplot, longitude_barplot,
 
 # Map View
 ```{r}
-cities_list <- read.csv("orase.csv", stringsAsFactors = T)
+cities_list <- read.csv("Data/orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",
                                        "NUME",

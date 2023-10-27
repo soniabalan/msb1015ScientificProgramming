@@ -25,29 +25,6 @@ GBIF Query used to retreive this data (using occ_download)):
 
 # Setup 
 ```{r} 
-# Libraries install
-# install.packages("rstudioapi")
-# install.packages("rgbif")
-# install.packages("dplyr")
-# install.packages("stringr")
-# install.packages("stringdist")
-# install.packages("microbenchmark")
-# install.packages("doParallel")
-# install.packages("sp")
-# install.packages("sf") # co=requisite of "rgeos", takes a long time to install
-# install.packages("rgeos") # rgeos has been archived in 2023!
-
-# # Libraries loading
-# library(rgbif)
-# library(dplyr)
-# library(stringr)
-# library(rstudioapi)
-# library(stringdist)
-# library(microbenchmark)
-# library(doParallel)
-# library(sp)
-# library(rgeos)
-
 source('0_Dependencies.R')
 
 # set wrok environment
@@ -98,13 +75,17 @@ remove_vars = c("datasetKey",
                 "month",
                 "year",
                 "collectionCode",
-                "coordinateUncertaintyInMeters")
+                "coordinateUncertaintyInMeters",
+                "occurrenceStatus",
+                "infraspecificEpithet",
+                "basisOfRecord")
 
 data = data_raw %>% select(-remove_vars)
 ```
 
-# Data Cleaning ----------------------------------------------------------------
-  General Cleaning
+# General Cleaning
+  - removing rows without any taxonomic data
+  - replace NA and 0 values from individualCounts with 1
 ```{r}
 # remove samples with no informative taxonomic data
 data <- data[-which(data$order == ""), ]
@@ -114,10 +95,11 @@ data <- data[!is.na(data$order), ]
 data$individualCount <- replace(data$individualCount, is.na(data$individualCount), 1)
 data$individualCount <- replace(data$individualCount, data$individualCount == 0, 1)
 ```
-  Location Data
-  Using information from: city/county database from https://github.com/romania/localitati
+# Location Data
+  Using information from: city/county database from https://github.com/romania/localitati 
+  This data contains a "dictionary" of Romanian cities, their province and coordinates
 ```{r}
-# load 
+# load information about Romanian administrative units 
 cities_list <- read.csv("Data/orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",
@@ -127,34 +109,31 @@ cities_list = cities_list %>% select(c("X",
 
 # rename columns
 colnames(cities_list) = c("decimalLongitude","decimalLatitude","locality","stateProvince")
-# print(sum(data$stateProvince==""))
 
 # remove stateProvince levels that are NOT real provinces in Romania
 unwanted_levels <- setdiff(levels(data$stateProvince), levels(cities_list$stateProvince))
 levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- NA
 
-# print(levels(data$stateProvince))
+# format cities library
+coord_by_province <- cities_list %>%
+  group_by(stateProvince) %>%
+  summarize(
+    lon_list = sort(decimalLongitude),
+    lat_list = sort(decimalLatitude)
+  )
 ```
-    - filter based on coordinates
+  Replace Province Labels Based on Coordinates Using 'rgeos'
 ```{r}
-'If you could install \'rgeos\', uncomment these lines to run the label replacement yourself. Otherwise, the stateProvince labels were exportet previously and can be loaded directly (in the next code section)'
+'The following lines use the \'rgeos\' package, which was archived earlier this year (2023). This section would most likely not work. The stateProvince labels were exported on a previous run and can be loaded directly (in the next code section)'
 
-# coord_by_province <- cities_list %>%
-#   group_by(stateProvince) %>%
-#   summarize(
-#     lon_list = sort(decimalLongitude),
-#     lat_list = sort(decimalLatitude)
-#   )
-# 
-# # test = data[,c("stateProvince","decimalLongitude","decimalLatitude")]
-# 
+# # only look at data without province labels
 # missing_indices <- which(is.na(data$stateProvince) &
 #                            !is.na(data$decimalLatitude) &
 #                            !is.na(data$decimalLongitude))
 # 
-# ##############################################
-# 'Add stateProvince labels based on coodinates'
-
+# data$decimalLatitude = as.numeric(data$decimalLatitude)
+# data$decimalLongitude = as.numeric(data$decimalLongitude)
+#                                    
 # # Create SpatialPointsDataFrame from coordinates in the data
 # cities_sp <- SpatialPointsDataFrame(coords = data[missing_indices, c("decimalLongitude", "decimalLatitude")], data=data[missing_indices,])
 # 
@@ -166,14 +145,14 @@ levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- N
 # # Find the perimeter for each cloud of points (each point representing a city) that represents the boundary of a province
 # for (province in province_list) {
 #   prov_data <- coord_by_province[coord_by_province$stateProvince == province, ]
-#   
+# 
 #   # find the convex hull of each province
 #   coord <- prov_data[, c("lon_list", "lat_list")]
 #   points <- SpatialPoints(coord)
 #   convex_hull <- gConvexHull(points)
 #   polygon_object <- convex_hull@polygons[[1]]
 #   polygon_object@ID <- as.character(province)
-#   
+# 
 #   # Add the boundary to the list
 #   prov_boundaries[[province]] <- polygon_object
 # }
@@ -190,7 +169,7 @@ levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- N
 # 
 # states_tree <- gUnaryUnion(states_spdf, id = (stateProvince = province_list))
 # 
-# 
+# #
 # 
 # # Loop through the missing_indices and use spatial index to find the state
 # for (i in 1:length(missing_indices)) {
@@ -205,21 +184,20 @@ levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- N
 # print(summary(data[missing_indices,]))
 # print(length(missing_indices))
 # print(sum(is.na(data$stateProvince)))
-#   data$stateProvince[i] <- region$stateProvince
-# 
+
 # # intermediary save
 # write.csv(data$stateProvince, "Data/geography_labels.csv", row.names=FALSE)
 ```
   geographical labels upload (if 'rgeos' is not available for install)
 ```{r}
 stateProvince_labels <- read.csv("Data/geography_labels.csv")
-data$stateProvince <- stateProvince_labels
+data$stateProvince <- stateProvince_labels$stateProvince
 
 ```
-  Taxonomy Labels
+# Taxonomy Labels
+  - aggregate information about taxonomical labels from duplicate columns containing the same information at different rows in different columns
 ```{r}
-
-##### Renaming verbatim scientific name levels #####
+# Renaming verbatim scientific name levels
 lvl_verbatim = levels(data$verbatimScientificName)
 verbatim_sp <- lapply(lvl_verbatim, function(x) word(x, 1, 2))
 levels(data$verbatimScientificName) = unlist(verbatim_sp)
@@ -232,44 +210,36 @@ data$species <- as.factor(data$species)
 # add genus information from species
 gen <- lapply(data[data$genus=="" & !is.na(data$species),"species"], function(x) word(x, 1))
 
+# perform replacement
 data$genus <- as.character(data$genus)
 data[which(data$genus=="" & !is.na(data$species)),"genus"] <- as.vector(gen)
 data$genus <- as.factor(data$genus)
 
 # sanity checks
-print(sum(is.na(data$genus))) # there might still be NA genus entries
+'remaining non-labeled rows for genus:'
+print(sum(is.na(data$genus))) 
 
+# remove duplicate column
 data = data %>% select(-c("verbatimScientificName"))
 ```
   Dates
 ```{r}
-print("before")
+'Missing date entries before replacement:'
 print(sum(is.na(data$eventDate)))
 
 
 data$eventDate <- replace(data$eventDate, is.na(data$eventDate), data$dateIdentified)
 
-# remaining NAs
-print("after")
+'Remaining missing date entries:'
 print(sum(is.na(data$eventDate)))
 
-# data = data %>% select(-c("dateIdentified"))
+# removie duplicate column
+data = data %>% select(-c("dateIdentified"))
 ```
 # Check remaining missingness
 ```{r}
 # keep only features of interest
-data_clean <- data %>% select(c("gbifID",
-                                "order",
-                                "family",
-                                "genus",
-                                "species",
-                                "stateProvince",
-                                "occurrenceStatus",
-                                "individualCount",
-                                "decimalLatitude",
-                                "decimalLongitude",
-                                "eventDate",
-                                "basisOfRecord"))
+data_clean <- data
 
 feature_missingness <- colSums(is.na(data_clean))
 indiv_missingness<- as.data.frame(rowSums(is.na(data_clean)))
@@ -281,10 +251,9 @@ ggplot(indiv_missingness, aes(total)) +
   labs(title = "Row-wise missingness",
        x = "Nr. missing values",
        y = "Count")
-
-data_clean <- data_clean[indiv_missingness$total<5,]
-
 ```
+Based on the row-wise missingness, since most rows have all the information, this dataset is considered sufficient for visualisation. 
+
 # Export Processed Data
 ```{r}
 write.csv(data_clean, "Data/data_clean.csv", row.names=FALSE)
