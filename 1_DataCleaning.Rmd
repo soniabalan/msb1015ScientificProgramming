@@ -125,7 +125,7 @@ data$individualCount <- replace(data$individualCount, data$individualCount == 0,
   Using information from: city/county database from https://github.com/romania/localitati
 ```{r}
 ############################################################
-cities_list <- read.csv("orase.csv", stringsAsFactors = T)
+cities_list <- read.csv("Data/orase.csv", stringsAsFactors = T)
 cities_list = cities_list %>% select(c("X",
                                        "Y",
                                        "NUME",
@@ -215,11 +215,11 @@ levels(data$stateProvince)[levels(data$stateProvince) %in% unwanted_levels] <- N
 #   data$stateProvince[i] <- region$stateProvince
 # 
 # # intermediary save
-# write.csv(data$stateProvince, "geography_labels.csv", row.names=FALSE)
+# write.csv(data$stateProvince, "Data/geography_labels.csv", row.names=FALSE)
 ```
   geographical labels upload (if 'rgeos' is not available for install)
 ```{r}
-stateProvince_labels <- read.csv("geography_labels.csv")
+stateProvince_labels <- read.csv("Data/geography_labels.csv")
 data$stateProvince <- stateProvince_labels
 
 ```
@@ -284,12 +284,15 @@ colnames(indiv_missingness) <- c("total")
 
 library(ggplot2)
 ggplot(indiv_missingness, aes(total)) +
-  geom_histogram()
+  geom_histogram() +
+  labs(title = "Row-wise missingness",
+       x = "Nr. missing values",
+       y = "Count")
 
 data_clean <- data_clean[indiv_missingness$total<5,]
 
 ```
 # Export Processed Data
 ```{r}
-write.csv(data_clean, "data_clean.csv", row.names=FALSE)
+write.csv(data_clean, "Data/data_clean.csv", row.names=FALSE)
 ```
