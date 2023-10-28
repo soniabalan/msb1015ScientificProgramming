@@ -509,8 +509,8 @@ ord_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "order")
 fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
 spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
 
-# measuring diversity --------
-# computing 3 diversity indices for 3 different taxonomical levels
+
+# computing 3 diversity indices for 3 different taxonomic levels
 # order
 biodiv_ord <- biodiversity_indexes(ord_per_prov, "order") 
 # family
@@ -518,7 +518,7 @@ biodiv_fam <- biodiversity_indexes(fam_per_prov, "family")
 # species
 biodiv_spp <- biodiversity_indexes(spp_per_prov, "species")
 
-# merging the information in a dataframe together with coordinates per province
+# merging the information in a data frame together with coordinates per province
 div_per_prov <- centers %>%
   left_join(biodiv_ord, by = "stateProvince")
 div_per_prov <- div_per_prov %>%
@@ -527,13 +527,131 @@ div_per_prov <- div_per_prov %>%
   left_join(biodiv_spp, by = "stateProvince")
 ```
 
-# Biodiversity Visualisations
+# Correlations between Occurrences and Diversity Indices
+  - Investigating the correlational relationship between each diversity score with respect to the total number of observations (total_counts) per province, and the log of the total number of observations per province
+```{r}
+# Structuring a data frame to contain count and diversity information by province
+prov_biodiversity <- biodiv_spp
+n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
+  group_by(stateProvince) %>%
+  summarize(n = n())
+prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
+prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
+
+# Counts vs Richness Index -----
+counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "Total Occurrences",
+       y = "Richness Index")
+
+ggsave( "Figures/counts_vs_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Counts vs Simpson Index -----
+counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "Total Occurrences",
+       y = "Simpson Index")
+
+ggsave( "Figures/counts_vs_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Counts vs Shannon-Wiener Index -----
+counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 1000,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "Total Occurrences",
+       y = "Shannon-Wiener Index")
+
+ggsave( "Figures/counts_vs_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Log Counts vs Richness Index -----
+log_counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
+  geom_point() +  
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 10) + 
+  labs(title = "Correlation between Total Counts and Species Richness",
+       x = "Log (Total Occurrences)",
+       y = "Richness Index")
+
+ggsave( "Figures/log_counts_vs_richness_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Log Counts vs Simpson Index -----
+log_counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.03) +
+  labs(title = "Correlation between Total Counts and Simpson Diversity",
+       x = "Log (Total Occurrences)",
+       y = "Simpson Index")
+
+ggsave( "Figures/log_counts_vs_simpson_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Log Counts vs Shannon-Wiener Index -----
+log_counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
+  geom_point() +
+  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
+            aes(label = stateProvince),
+            size = 3, color = "black",
+            nudge_x = 0.005,
+            nudge_y = 0.1) +
+  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
+       x = "Log (Total Occurrences)",
+       y = "shannon-wiener index")
+
+ggsave( "Figures/log_counts_vs_shannon_wiener_index.png",
+  plot = last_plot(),
+  device = "png",
+  width = 6, height = 4)
+
+# Correlation Matrix -----
+corr_matrix <- cor(prov_biodiversity[c("richness_index", "simpson_index", "shannon_wiener_index", "n")])
+print(corr_matrix)
+```
+
+# Visualize Biodiversity Scores per Province
+The scores of each province are overlayed on top of a map that shows the relevant geographical features and rivers of Romania 
 ```{r}
 img <- readJPEG("map_of_romania.jpg")
 
-# ORDER --------
-
-'Species Richness'
+# Order Level Diversity -----
+# Richness Index
 map_order_richness_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -561,13 +679,14 @@ map_order_richness_index <- ggplot(data = div_per_prov,
             nudge_y = 0.2) + 
   scale_color_gradient(low = "yellow", high = "purple") +
   theme(panel.background = element_blank()) 
+map_order_richness_index
 
 ggsave( "Figures/map_order_richness_index.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-'SIMPSON INDEX'
+# Simpson Index
 map_order_simpson_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -601,7 +720,7 @@ ggsave( "Figures/map_order_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SHANON-WIENER INDEX '
+# Shannon-Wiener Index
 map_order_shannon_wiener_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -636,8 +755,8 @@ ggsave( "Figures/map_order_shannon_wiener_index.png",
   width = 6, height = 4)
 
 
-# FAMILY --------
-'Species Richness'
+# Family Level Diversity -----
+# Richness Index
 map_family_richness_index <- ggplot(data = div_per_prov, 
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -671,7 +790,7 @@ ggsave( "Figures/map_family_richness_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SIMPSON INDEX'
+# Simpson Index
 map_family_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -705,7 +824,7 @@ ggsave( "Figures/map_family_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SHANON-WIENER INDEX '
+# Shannon-Wiener Index
 map_family_shannon_wiener_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -739,9 +858,8 @@ ggsave( "Figures/map_family_shannon_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SPECIES'
-# SPECIES --------
-'Species Richness'
+# Species Level Diversity -----
+# Richness Index
 map_species_richness_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -775,7 +893,7 @@ ggsave( "Figures/map_species_richness_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SIMPSON INDEX'
+# Simpson Index
 map_species_simpson_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) +
   annotation_raster(img,
@@ -809,8 +927,7 @@ ggsave( "Figures/map_species_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
-'SHANON-WIENER INDEX '
-
+# Shannon-Wiener Index
 map_species_shannon_wiener_index <- ggplot(data = div_per_prov,
        aes(x = decimalLongitude, y = decimalLatitude)) + 
   annotation_raster(img,
@@ -843,159 +960,36 @@ ggsave( "Figures/map_species_shannon_wiener_index.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
-
-
 ```
 
-Correlation between diversity score and nr of observations - verify robustness
+# Visualize the Yearly Change in Biodiversity
+  - computing yearly biodiversity
 ```{r}
-prov_biodiversity <- biodiv_spp
-
-n <- data_vis[data_vis$stateProvince %in% biodiv_spp$stateProvince, ] %>%
-  group_by(stateProvince) %>%
-  summarize(n = n())
-
-prov_biodiversity <- merge(prov_biodiversity, n, by = 'stateProvince')
-prov_biodiversity <- prov_biodiversity[!is.na(prov_biodiversity$stateProvince), ]
-# counts ----
-# counts vs. richness index
-counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = n, y = richness_index)) + 
-  geom_point() +  
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 10) + 
-  labs(title = "Correlation between Total Counts and Species Richness",
-       x = "Total Occurrences",
-       y = "Richness Index")
-
-ggsave( "Figures/counts_vs_richness_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-# counts vs. simpson index
-counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = n, y = simpson_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 0.03) +
-  labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "Total Occurrences",
-       y = "Simpson Index")
-
-ggsave( "Figures/counts_vs_simpson_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-# counts vs. shannon-wiener
-counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = n, y = shannon_wiener_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 1000,
-            nudge_y = 0.1) +
-  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "Total Occurrences",
-       y = "Shannon-Wiener Index")
-
-ggsave( "Figures/counts_vs_shannon_wiener_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-# log counts -----
-# counts vs. richness index
-log_counts_vs_richness_index <- ggplot(prov_biodiversity, aes(x = log(n), y = richness_index)) + 
-  geom_point() +  
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 10) + 
-  labs(title = "Correlation between Total Counts and Species Richness",
-       x = "Log (Total Occurrences)",
-       y = "Richness Index")
-
-ggsave( "Figures/log_counts_vs_richness_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-# counts vs. simpson index
-log_counts_vs_simpson_index <- ggplot(prov_biodiversity, aes(x = log(n), y = simpson_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 0.03) +
-  labs(title = "Correlation between Total Counts and Simpson Diversity",
-       x = "Log (Total Occurrences)",
-       y = "Simpson Index")
-
-ggsave( "Figures/log_counts_vs_simpson_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-# counts vs. shannon-wiener
-log_counts_vs_shannon_wiener_index <- ggplot(prov_biodiversity, aes(x = log(n), y = shannon_wiener_index)) + 
-  geom_point() +
-  geom_text(data = prov_biodiversity[prov_biodiversity$stateProvince %in% prov$stateProvince, ],
-            aes(label = stateProvince),
-            size = 3, color = "black",
-            nudge_x = 0.005,
-            nudge_y = 0.1) +
-  labs(title = "Correlation between Total Counts and Shannon-Wiener Diversity",
-       x = "Log (Total Occurrences)",
-       y = "shannon-wiener index")
-
-ggsave( "Figures/log_counts_vs_shannon_wiener_index.png",
-  plot = last_plot(),
-  device = "png",
-  width = 6, height = 4)
-
-
-corr_matrix <- cor(prov_biodiversity[c("richness_index", "simpson_index", "shannon_wiener_index", "n")])
-print(corr_matrix)
-```
-
-# Yearly change in biodiversity
-```{r}
-# measuring diversity --------
-# ORDER
+# Order Level
 ord_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")),"formatted_date", "stateProvince", "order")
 
 biodiv_yearly_order <- biodiversity_indexes_yearly(ord_per_year_per_prov,"order")
 
-# FAMILU
+# Family Level
 fam_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "stateProvince", "family")
 
 biodiv_yearly_family <- biodiversity_indexes_yearly(fam_per_year_per_prov,"family")
 
-
-# SPECIES
+# Species Level
 spp_per_year_per_prov <- process_counts_per_feature_per_time(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "stateProvince", "species")
 
 biodiv_yearly_species <- biodiversity_indexes_yearly(spp_per_year_per_prov,"species")
 ```
 
-# yearly biodiversity visualization
+  - Visualization of the Distribution of Diversity Values for each Province in a Year
 ```{r}
-# richness index -----
+# Richness Index -----
 # Order level
 distribution_order_richness_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Richness Index Over Time (Order level)",
        x = "Year",
        y = "Richness Index") 
@@ -1011,7 +1005,6 @@ distribution_family_richness_index <- ggplot(biodiv_yearly_family, aes(x = facto
                fill = "skyblue",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Richness Index Over Time (Family level)",
        x = "Year",
        y = "Richness Index") 
@@ -1021,12 +1014,12 @@ ggsave( "Figures/distribution_family_richness_index.png",
   device = "png",
   width = 6, height = 4)
 
+# Species level
 distribution_species_richness_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = richness_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Richness Index Over Time (Species level)",
        x = "Year",
        y = "Richness Index") 
@@ -1036,13 +1029,13 @@ ggsave( "Figures/distribution_species_richness_index.png",
   device = "png",
   width = 6, height = 4)
 
-# simpson index ----
+# Simpson Index ----
+# Order Level
 distribution_order_simpson_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Simpson Index Over Time (Order level)",
        x = "Year",
        y = "Simpson Index") 
@@ -1052,12 +1045,12 @@ ggsave( "Figures/distribution_order_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
+# Family Level
 distribution_family_simpson_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "skyblue",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Simpson Index Over Time (Family level)",
        x = "Year",
        y = "Simpson Index") 
@@ -1067,12 +1060,12 @@ ggsave( "Figures/distribution_family_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
+# Species Level
 distribution_species_simpson_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = simpson_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Simpson Index Over Time (Species level)",
        x = "Year",
        y = "Simpson Index") 
@@ -1082,13 +1075,13 @@ ggsave( "Figures/distribution_species_simpson_index.png",
   device = "png",
   width = 6, height = 4)
 
-# shannon-wiener index ----
+# Shannon-Wiener Index -----
+# Order Level
 distribution_order_shannon_wiener_index <- ggplot(biodiv_yearly_order, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "lightgoldenrod1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Sihannon-Wiener Index Over Time (Order level)",
        x = "Year",
        y = "Shannon-Wiener Index") 
@@ -1098,12 +1091,12 @@ ggsave( "Figures/distribution_order_shannon_wiener_index.png",
   device = "png",
   width = 6, height = 4)
 
+# Family Level
 distribution_family_shannon_wiener_index <- ggplot(biodiv_yearly_family, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "skyblue",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Sihannon-Wiener Index Over Time (Family level)",
        x = "Year",
        y = "Shannon-Wiener Index") 
@@ -1113,12 +1106,12 @@ ggsave( "Figures/distribution_family_shannon_wiener_index.png",
   device = "png",
   width = 6, height = 4)
 
+# Species Level
 distribution_species_shannon_wiener_index <- ggplot(biodiv_yearly_species, aes(x = factor(formatted_date), y = shannon_wiener_index)) +
   geom_violin (draw_quantiles = c(0.25, 0.5, 0.75),
                fill = "pink1",
                scale = "width",
                width = 0.8) +
-  # stat_summary(geom = "line", fun.data = "median_hilow", aes(group = 1), color = "blue") +
   labs(title = "Sihannon-Wiener Index Over Time (Species level)",
        x = "Year",
        y = "Shannon-Wiener Index") 
@@ -1129,10 +1122,13 @@ ggsave( "Figures/distribution_species_shannon_wiener_index.png",
   width = 6, height = 4)
 ```
 
-# dominant groups per province - based on counts
+  - Dominant Groups per Province - based on counts
+  
+  Here, we look at which species/families/genera are the most common in each province. We first do this based on the provinces with the most observations (total_count), whereas in the next section the provinces with the highest Shannon-Wiener diversity index. We are interested to see the differences between these provinces.
+  
+  The stacked barplots will contain the relative amount of birds by total number of observations (total_counts) in both cases, just the provinces will (potentially) differ.
 ```{r}
-#######
-# order per stateProvince
+# Order Level -----
 ord_per_prov_top <- ord_per_prov %>%
   group_by(stateProvince) %>%
   top_n(8, total_count) %>%
@@ -1153,8 +1149,7 @@ ggsave( "Figures/order_per_province_counts.png",
   device = "png",
   width = 6, height = 6)
 
-###### 
-# families per stateProvince
+# Family Level ------
 fam_per_prov_top <- fam_per_prov%>%
   group_by(stateProvince) %>%
   top_n(8, total_count) %>%
@@ -1175,8 +1170,7 @@ ggsave( "Figures/family_per_province_counts.png",
   device = "png",
   width = 6, height = 6)
 
-###### 
-# species per stateProvince
+# Species Level -----
 spp_per_prov_top <- spp_per_prov %>%
   group_by(stateProvince) %>%
   top_n(5, total_count) %>%
@@ -1196,24 +1190,22 @@ ggsave( "Figures/species_per_province_counts.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 6)
-
 ```
 
-  Based on top diversity
+  - Based on Shannon-Wiener Diversity
+    Obtaining the provinces with the highest diversity
 ```{r}
-# top province -----
+# Obtaining the most diverse 10 provinces according to the Shannon-Wiener diversity index
 prov_biodiversity <- prov_biodiversity[order(prov_biodiversity$shannon_wiener_index, decreasing = T), ]
 
 prov_biodiversity_top <- prov_biodiversity[1:10, ]
 
-
-# color_scale <- scale_fill_gradient(low = "lightblue", high = "darkblue")
+# Visualizing the number of observations in the most "observed" provinces
 count_biodiv_top_prov_barplot <- ggplot(prov_biodiversity_top,
                                         aes(x = reorder(stateProvince,n),
                                             y = n, 
                                             fill = n)) +
   geom_bar(stat = "identity") +
-  # coord_polar("y", start=0) + 
   scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
@@ -1221,12 +1213,13 @@ count_biodiv_top_prov_barplot <- ggplot(prov_biodiversity_top,
      fill = "Total Occurrences")+
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
+
+# Visualizing the number of observations in the most diverse provinces
 shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top, 
                                           aes(x = reorder(stateProvince,shannon_wiener_index),
                                               y = shannon_wiener_index,
                                               fill = shannon_wiener_index)) +
   geom_bar(stat = "identity") +
-  # coord_polar("y", start=0) + 
   scale_fill_continuous(low="deepskyblue1", high="deepskyblue4") +
   labs(title = paste("Occurences per County - by Simpson Index"),
      x = "County",
@@ -1234,13 +1227,12 @@ shannon_wiener_top_prov_barplot <- ggplot(prov_biodiversity_top,
      fill = "S-W Index")+
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
 
-grid.arrange(count_biodiv_top_prov_barplot, shannon_wiener_top_prov_barplot, nrow = 2) 
-# occurences_per_province_by_shannon
+grid.arrange(count_biodiv_top_prov_barplot, shannon_wiener_top_prov_barplot, nrow = 2)
 ```
 
-# dominant groups per province
+  - Finally, visualizing the dominant groups in the most diverse provinces
 ```{r}
-# order per stateProvince -----
+# Order Level -----
 ord_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "order")
 ord_per_prov_top <- ord_per_prov %>%
   group_by(stateProvince) %>%
@@ -1263,8 +1255,7 @@ ggsave( "Figures/order_per_province_shannon.png",
   device = "png",
   width = 6, height = 6)
 
-
-# families per stateProvince -----
+# Family Level -----
 fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
 fam_per_prov_top <- fam_per_prov%>%
   group_by(stateProvince) %>%
@@ -1287,7 +1278,7 @@ ggsave( "Figures/family_per_province_shannon.png",
   device = "png",
   width = 6, height = 6)
 
-# species per stateProvince -----
+# Species Level -----
 spp_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "species")
 spp_per_prov_top <- spp_per_prov %>%
   group_by(stateProvince) %>%
@@ -1309,8 +1300,3 @@ ggsave( "Figures/species_per_province_shannon.png",
   device = "png",
   width = 6, height = 6)
 ```
-
-
-
-
-
