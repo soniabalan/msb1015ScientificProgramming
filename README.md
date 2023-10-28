@@ -3,7 +3,7 @@
 ## Project Description
 This project looks at GBIF data of bird sightings in the administrative territory of Romania. It aims to visualize the status of birds in Romania and the biodiversity profiles in different provinces and across time.
 
-Data Info:
+## Data Info:
   Username: soniaa.balan
   Format: SIMPLE_CSV
   Download key: 0018307-230828120925497
