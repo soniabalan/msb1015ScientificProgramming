@@ -11,6 +11,7 @@ package_list = c("rstudioapi",
                  # "rgeos", # rgeos has been archived in 2023 - you might not be able to install it on your machine
                  "ggplot2",
                  "gridExtra",
+                 "vegan",
                  "jpeg")
 
 
