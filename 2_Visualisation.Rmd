@@ -255,14 +255,16 @@ ggsave( "Figures/occurrences_map.png",
   width = 6, height = 4)
 ```
 
-# MOST OBSERVED BIRDS 
+# MOST OBSERVED BIRDS -------------------------------------------------------
+
+Here, we visualize which are the most common species and genera of birds in Romania
 ```{r}
-# top species ------
+# Find out the top most observed species
 spp_total <- process_counts(data_vis, "species")
 spp_top <- head(spp_total[order(spp_total$total_count, decreasing = TRUE), ], 11)
 spp_top_sans1 <- spp_top[-1,]
 
-# most abundent birds (overall)
+# most abundent species (overall) -----
 species_abundence_top <- ggplot(spp_top,
        aes(x = reorder(species, total_count),
            y = total_count/sum(total_count),
@@ -270,22 +272,18 @@ species_abundence_top <- ggplot(spp_top,
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightpink1", high="lightpink4") +
-  # geom_text(aes(label=species),
-  #           size=3,
-  #           position = position_stack(vjust = 0)) +
   labs(title = "Top Species Overall",
      x = "Species",
      y = NULL,
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
 
-# species_abundence_top
 ggsave( "Figures/species_abundence_top.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# most abundent birds (overall), without Anser albiformis (outlier?)
+# most abundent species, without Anser albifrontis -----
 species_abundance_no_albiformis <- ggplot(spp_top_sans1,
        aes(x = reorder(species, total_count),
            y = total_count/sum(total_count),
@@ -293,24 +291,22 @@ species_abundance_no_albiformis <- ggplot(spp_top_sans1,
   geom_bar(stat = "identity") +
   coord_polar("y", start=0) +
   scale_fill_continuous(low="lightpink1", high="lightpink4") +
-  # geom_text(aes(label=species),
-  #           size=3,
-  #           position = position_stack(vjust = 0)) +
   labs(title = "Top Species (without Anser albiformis)",
      x = "Species",
      y = NULL,
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
-# species_abundance_no_albiformis
+
 ggsave( "Figures/species_abundance_no_albiformis.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# top genus --------
+# Finding out the top most observed genera
 gen_total <- process_counts(data_vis, "genus")
 gen_top <- head(gen_total[order(gen_total$total_count, decreasing = TRUE), ], 12)
-# most abundent birds (overall)
+
+# most abundent genera  -----
 genus_abundance_top <- ggplot(gen_top, aes(x = reorder(genus, total_count),
                     y = total_count/sum(total_count),
                     fill = total_count/sum(total_count))) +
@@ -322,13 +318,13 @@ genus_abundance_top <- ggplot(gen_top, aes(x = reorder(genus, total_count),
      y = NULL,
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
-# genus_abundance_top
+
 ggsave( "Figures/genus_abundance_top.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-# most abundent birds (overall) without waxwings
+# most abundent genera, without geese -----
 gen_top_sans1 <- gen_top[-1,]
 genus_abundance_no_anser <- ggplot(gen_top_sans1, aes(x = reorder(genus, total_count),
                           y = total_count/sum(total_count),
@@ -341,23 +337,28 @@ genus_abundance_no_anser <- ggplot(gen_top_sans1, aes(x = reorder(genus, total_c
      y = NULL,
      fill = "Abundance") +
   theme(panel.background = element_rect(fill = "transparent"))
-# genus_abundance_no_anser
+
 ggsave( "Figures/genus_abundance_no_anser.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 ```
 
-# dominant groups per month
+# DOMINANT GROUPS PER TIME
+
+Here, we look at which species/families/genera are the most common each month and year. This is based on the number of times each bird has been seen per all observations (total_counts). In a later section, we will see this is not an indicative of diversity, but it still shows which birds are, in terms of absolute numbers, the most abundant.
+
+  - Dominant Groups per Month
 ```{r}
-#######
-# order per month
+# Order per Month ----
+# Structuring the data to show the top orders by total counts per month
 ord_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "order")
 ord_per_month_top <- ord_per_month %>%
   group_by(formatted_date) %>%
   top_n(8, total_count) %>%
   ungroup()
 
+# Plotting the order distribution in a normalized stacked barplot
 order_per_month_plot <- ggplot(ord_per_month_top,
        aes(x = formatted_date,
            y = total_count,
@@ -368,20 +369,21 @@ order_per_month_plot <- ggplot(ord_per_month_top,
        y = "Abundance (Proportion)",
        fill = "Order") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
-# order_per_month_plot
+
 ggsave( "Figures/order_per_month_plot.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-###### 
-# families per month
+# Families per month -----
+# Performing the same operation at the family level
 fam_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "family")
 fam_per_month_top <- fam_per_month %>%
   group_by(formatted_date) %>%
   top_n(8, total_count) %>%
   ungroup()
 
+# Producing the same plot for the family level data
 family_per_month_plot <- ggplot(fam_per_month_top,
        aes(x = formatted_date,
            y = total_count,
@@ -398,14 +400,15 @@ ggsave( "Figures/family_per_month_plot.png",
   device = "png",
   width = 6, height = 4)
 
-###### 
-# species per month
+# Species per Month -----
+# Performing the same operation at the species level (fewer number of species are considered in the top to minimize clutter in the figure due to larger amounts of labels)
 spp_per_month <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%b")), "formatted_date", "species")
 spp_per_month_top <- spp_per_month %>%
   group_by(formatted_date) %>%
   top_n(5, total_count) %>%
   ungroup()
 
+# Producing the same plot for species level data
 species_per_month_plot <- ggplot(spp_per_month_top,
        aes(x = formatted_date,
            y = total_count,
@@ -416,7 +419,7 @@ species_per_month_plot <- ggplot(spp_per_month_top,
        y = "Abundance (Proportion)", 
        fill = "Species") +
   scale_x_discrete(limits = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) 
-# species_per_month_plot
+
 ggsave( "Figures/species_per_month_plot.png",
   plot = last_plot(),
   device = "png",
@@ -424,16 +427,17 @@ ggsave( "Figures/species_per_month_plot.png",
 
 ```
 
-# dominant groups per year
+  - Dominant Groups per Year
+  the same steps taken for the dominant groups per month are taken to visualize the dominant groups each year
 ```{r}
-#######
-# order per month
+# Order per Year -----
 ord_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "order")
 ord_per_yr_top <- ord_per_yr %>%
   group_by(formatted_date) %>%
   top_n(8, total_count) %>%
   ungroup()
 
+# plotting
 order_per_year_plot <- ggplot(ord_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
@@ -443,20 +447,20 @@ order_per_year_plot <- ggplot(ord_per_yr_top,
        x = "Year",
        y = "Abundance (Proportion)",
        fill = "Order") 
-# order_per_year_plot
+
 ggsave( "Figures/order_per_year_plot.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-###### 
-# families per month
+# Family per Year -----
 fam_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "family")
 fam_per_yr_top <- fam_per_yr %>%
   group_by(formatted_date) %>%
   top_n(8, total_count) %>%
   ungroup()
 
+# plotting
 family_per_year_plot <- ggplot(fam_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
@@ -466,20 +470,20 @@ family_per_year_plot <- ggplot(fam_per_yr_top,
        x = "Year",
        y = "Abundance (Proportion)",
        fill = "Family") 
-# family_per_year_plot
+
 ggsave( "Figures/family_per_year_plot.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 
-###### 
-# species per month
+# Species per Year -----
 spp_per_yr <- process_counts_per_feature(data_vis %>% mutate(formatted_date = format(eventDate, "%Y")), "formatted_date", "species")
 spp_per_yr_top <- spp_per_yr %>%
   group_by(formatted_date) %>%
   top_n(5, total_count) %>%
   ungroup()
 
+# plotting
 species_per_year_plot <- ggplot(spp_per_yr_top,
        aes(x = formatted_date,
            y = total_count,
@@ -489,14 +493,17 @@ species_per_year_plot <- ggplot(spp_per_yr_top,
        x = "Year",
        y = "Abundance (Proportion)",
        fill = "Species") 
-# species_per_year_plot
+
 ggsave( "Figures/species_per_year_plot.png",
   plot = last_plot(),
   device = "png",
   width = 6, height = 4)
 ```
 
-# Biodiversity
+# BIODIVERSITY -----------------------------------------------------------------------
+In this next section different diversity metrics will be evaluated and the biodiversity profile of Romanian provinces will be evaluated according to these metrics.
+
+  - Computing the Diversity Scores
 ```{r}
 ord_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "order")
 fam_per_prov <- process_counts_per_feature(data_vis, "stateProvince", "family")
