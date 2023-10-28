@@ -18,7 +18,7 @@ This project looks at GBIF data of bird sightings in the administrative territor
 
 ## Getting Started
 
-There are 2 main scripts in this project: 1_DataCleaning.R and 2_Visualisations.R. Both of them can be run independently, provided you also have the Data folder. If you want to replicate the steps taken in this project, first run the Data Cleaning script first and then the Data Visualisations script.
+There are 2 main scripts in this project: 1_DataCleaning.R and 2_Visualisations.R. Both of them can be run independently, provided you also have the Data folder. If you want to replicate the steps taken in this project, first run the Data Cleaning script and then the Data Visualisations script.
 
 ### Prerequisites
 
